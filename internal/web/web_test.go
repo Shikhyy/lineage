@@ -128,8 +128,17 @@ func TestUIRunAndApprove(t *testing.T) {
 		b, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, string(b)
 	}
-	if code, body := get("/"); code != 200 || !strings.Contains(body, "BEC") {
-		t.Fatalf("index: %d", code)
+	if code, body := get("/demo"); code != 200 || !strings.Contains(body, "BEC") {
+		t.Fatalf("demo page: %d", code)
+	}
+	if code, body := get("/"); code != 200 || !strings.Contains(body, "can’t be phished") || !strings.Contains(body, "/static/site.js") {
+		t.Fatalf("landing page: %d", code)
+	}
+	if code, body := get("/api/bench"); code != 200 || !strings.HasPrefix(strings.TrimSpace(body), "[") {
+		t.Fatalf("bench api: %d %q", code, body)
+	}
+	if code, _ := get("/static/site.css"); code != 200 {
+		t.Fatalf("site.css: %d", code)
 	}
 
 	resp, err := c.PostForm(ts.URL+"/run", url.Values{"scenario": {"a2-bec-vendor-change"}, "mode": {"compromised"}, "defense": {"lineage"}})

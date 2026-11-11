@@ -13,6 +13,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -77,7 +78,9 @@ func (s *Server) Handler() (http.Handler, error) {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok")) })
 
-	mux.HandleFunc("GET /{$}", s.index)
+	mux.HandleFunc("GET /{$}", s.home)
+	mux.HandleFunc("GET /demo", s.index)
+	mux.HandleFunc("GET /api/bench", s.apiBench)
 	mux.HandleFunc("POST /run", s.runScenario)
 	mux.HandleFunc("GET /runs/{id}", s.runPage)
 	mux.HandleFunc("GET /approvals", s.approvalsPage)
@@ -151,6 +154,28 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, name, title stri
 }
 
 // ---- pages ----
+
+// home serves the landing page.
+func (s *Server) home(w http.ResponseWriter, r *http.Request) {
+	var buf strings.Builder
+	if err := s.tpl.ExecuteTemplate(&buf, "home", struct{ Simulated bool }{s.Simulated}); err != nil {
+		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(buf.String()))
+}
+
+// apiBench serves the benchmark summary written by `make bench`.
+func (s *Server) apiBench(w http.ResponseWriter, r *http.Request) {
+	b, err := os.ReadFile(filepath.Join(filepath.Dir(s.ResultsPath), "summary.json"))
+	if err != nil {
+		writeJSON(w, http.StatusOK, []any{})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(b)
+}
 
 type indexData struct {
 	Scenarios []scenario.Scenario
