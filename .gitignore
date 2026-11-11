@@ -1,0 +1,22 @@
+# secrets and local state
+.env
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# build output
+/bin/
+/lineage
+/bench
+
+# dev-only material (specs, internal instructions)
+devdocs/
+docs/
+CLAUDE.md
+AGENTS.md
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
