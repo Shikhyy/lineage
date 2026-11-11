@@ -430,6 +430,63 @@ func (s *Store) PaymentForDecision(decisionID string) (Payment, error) {
 	return p, err
 }
 
+// RunPayments lists payments made for decisions of a run.
+func (s *Store) RunPayments(runID string) ([]Payment, error) {
+	rows, err := s.db.Query(`SELECT p.id,p.decision_id,p.rail,p.request_json,p.response_json,p.status,p.created_at
+FROM payments p JOIN decisions d ON d.id=p.decision_id WHERE d.run_id=? ORDER BY p.rowid`, runID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Payment
+	for rows.Next() {
+		var p Payment
+		if err := rows.Scan(&p.ID, &p.DecisionID, &p.Rail, &p.RequestJSON, &p.ResponseJSON, &p.Status, &p.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ---- run steps (timeline) ----
+
+type Step struct {
+	ID         int64  `json:"id"`
+	RunID      string `json:"run_id"`
+	Kind       string `json:"kind"`
+	Summary    string `json:"summary"`
+	DetailJSON string `json:"detail_json"`
+	CreatedAt  string `json:"created_at"`
+}
+
+func (s *Store) AddStep(runID, kind, summary string, detail any) error {
+	d, _ := json.Marshal(detail)
+	if detail == nil {
+		d = []byte("{}")
+	}
+	_, err := s.db.Exec(`INSERT INTO run_steps(run_id,kind,summary,detail_json,created_at) VALUES(?,?,?,?,?)`,
+		runID, kind, summary, string(d), now())
+	return err
+}
+
+func (s *Store) RunSteps(runID string) ([]Step, error) {
+	rows, err := s.db.Query(`SELECT id,run_id,kind,summary,detail_json,created_at FROM run_steps WHERE run_id=? ORDER BY id`, runID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Step
+	for rows.Next() {
+		var st Step
+		if err := rows.Scan(&st.ID, &st.RunID, &st.Kind, &st.Summary, &st.DetailJSON, &st.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, st)
+	}
+	return out, rows.Err()
+}
+
 // ---- runs ----
 
 type Run struct {

@@ -66,6 +66,8 @@ const (
 	KindRecord Kind = "record"
 )
 
+func (k Kind) String() string { return string(k) }
+
 // Fragment is one piece of context that can enter an agent prompt.
 type Fragment struct {
 	ID        string    `json:"id"`

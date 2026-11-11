@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS runs (
   finished_at TEXT NOT NULL DEFAULT ''
 );
 
+CREATE TABLE IF NOT EXISTS run_steps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  detail_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_steps_run ON run_steps(run_id);
+
 CREATE TABLE IF NOT EXISTS decisions (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
