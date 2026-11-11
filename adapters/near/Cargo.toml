@@ -1,0 +1,20 @@
+[package]
+name = "lineage-near"
+version = "0.1.0"
+edition = "2021"
+description = "Signs NEAR Intents messages (NEP-413) only when the Lineage guard authorizes them"
+license = "MIT"
+
+[dependencies]
+# ed25519 + sha2: NEP-413 is a sha256 digest signed with ed25519; no larger NEAR SDK is needed for it.
+ed25519-dalek = "2"
+sha2 = "0.10"
+bs58 = "0.5"
+base64 = "0.22"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# tiny_http / ureq: a small local HTTP server and a blocking client for the guard API.
+tiny_http = "0.12"
+ureq = { version = "2", features = ["json"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
