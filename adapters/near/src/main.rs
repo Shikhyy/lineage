@@ -1,4 +1,8 @@
-use lineage_near::{guard::HttpGuard, handle, nep413::Signer, Config, SignRequest};
+use lineage_near::{fetch_salt, guard::HttpGuard, handle, nep413::Signer, Config, SignRequest};
+
+fn hex(b: &[u8]) -> String {
+    b.iter().map(|x| format!("{x:02x}")).collect()
+}
 use std::io::Read;
 use tiny_http::{Header, Method, Response, Server};
 
@@ -14,7 +18,9 @@ fn json_response(code: u16, body: serde_json::Value) -> Response<std::io::Cursor
 
 fn main() {
     let guard = HttpGuard { base: env("GUARD_URL", "http://localhost:8080").trim_end_matches('/').to_string() };
-    let salt = std::env::var("INTENTS_SALT").ok().filter(|v| !v.is_empty()).map(|h| {
+    let rpc_url = env("NEAR_RPC_URL", "https://rpc.mainnet.near.org");
+    let verifier = env("INTENTS_VERIFIER", "intents.near");
+    let fixed_salt = std::env::var("INTENTS_SALT").ok().filter(|v| !v.is_empty()).map(|h| {
         let b = h.trim_start_matches("0x");
         let bytes: Vec<u8> = (0..b.len() / 2).filter_map(|i| u8::from_str_radix(&b[2 * i..2 * i + 2], 16).ok()).collect();
         <[u8; 4]>::try_from(bytes).unwrap_or_else(|_| {
@@ -22,10 +28,12 @@ fn main() {
             std::process::exit(1);
         })
     });
-    if salt.is_none() {
-        eprintln!("INTENTS_SALT is not set: nonces will be fully random and a real Verifier would reject them");
+    match (&fixed_salt, fetch_salt(&rpc_url, &verifier)) {
+        (Some(_), _) => eprintln!("using the fixed INTENTS_SALT"),
+        (None, Ok(s)) => eprintln!("Verifier salt fetched from {rpc_url}: {} (re-read on every request, it rotates)", hex(&s)),
+        (None, Err(e)) => eprintln!("could not read the Verifier salt ({e}); nonces will be fully random and a real Verifier would reject them"),
     }
-    let cfg = Config { account_id: env("NEAR_ACCOUNT_ID", "lineage-demo.testnet"), salt };
+    let account_id = env("NEAR_ACCOUNT_ID", "lineage-demo.testnet");
     let network = env("NEAR_NETWORK", "testnet");
 
     let signer = match std::env::var("NEAR_SECRET_KEY").ok().filter(|v| !v.is_empty()) {
@@ -40,7 +48,7 @@ fn main() {
             Signer::from_seed(seed)
         }
     };
-    eprintln!("lineage-near: account {} ({network}), public key {}", cfg.account_id, signer.public_key_string());
+    eprintln!("lineage-near: account {} ({network}), public key {}", account_id, signer.public_key_string());
 
     let addr = format!("0.0.0.0:{}", env("ADAPTER_PORT", "8090"));
     let server = Server::http(&addr).unwrap_or_else(|e| {
@@ -57,7 +65,15 @@ fn main() {
                 let _ = rq.as_reader().take(1 << 20).read_to_string(&mut body);
                 match serde_json::from_str::<SignRequest>(&body) {
                     Err(e) => json_response(400, serde_json::json!({"error": format!("invalid request: {e}")})),
-                    Ok(req) => match handle(&cfg, &guard, &signer, req) {
+                    Ok(req) => match handle(
+                        &Config {
+                            account_id: account_id.clone(),
+                            salt: fixed_salt.or_else(|| fetch_salt(&rpc_url, &verifier).ok()),
+                        },
+                        &guard,
+                        &signer,
+                        req,
+                    ) {
                         Ok(v) => json_response(200, v),
                         Err(e) => json_response(403, serde_json::json!({"error": e})),
                     },

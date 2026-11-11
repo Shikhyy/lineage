@@ -38,6 +38,41 @@ fn iso(unix: i64) -> Result<String, String> {
         .ok_or_else(|| "deadline_unix out of range".to_string())
 }
 
+/// Parses the bytes returned by the Verifier's `current_salt` view call: a JSON string of
+/// 8 hex characters (for example `"252812b3"`) encoded as UTF-8 bytes.
+pub fn parse_salt(bytes: &[u8]) -> Result<[u8; 4], String> {
+    let s: String = serde_json::from_slice(bytes).map_err(|e| format!("current_salt is not a JSON string: {e}"))?;
+    if s.len() != 8 {
+        return Err(format!("current_salt must be 8 hex characters, got {}", s.len()));
+    }
+    let mut out = [0u8; 4];
+    for (i, b) in out.iter_mut().enumerate() {
+        *b = u8::from_str_radix(&s[2 * i..2 * i + 2], 16).map_err(|_| "current_salt is not hex".to_string())?;
+    }
+    Ok(out)
+}
+
+/// Reads the Verifier's current salt through a public NEAR RPC view call. The salt rotates,
+/// so callers should fetch it per request rather than caching it for long.
+pub fn fetch_salt(rpc_url: &str, verifier: &str) -> Result<[u8; 4], String> {
+    let body = json!({"jsonrpc": "2.0", "id": "lineage", "method": "query", "params": {
+        "request_type": "call_function", "finality": "final", "account_id": verifier,
+        "method_name": "current_salt", "args_base64": "e30="}});
+    let resp: Value = ureq::post(rpc_url)
+        .timeout(std::time::Duration::from_secs(10))
+        .send_json(body)
+        .map_err(|e| format!("salt RPC failed: {e}"))?
+        .into_json()
+        .map_err(|e| format!("salt RPC: bad response: {e}"))?;
+    let bytes: Vec<u8> = resp["result"]["result"]
+        .as_array()
+        .ok_or_else(|| format!("salt RPC returned no result: {resp}"))?
+        .iter()
+        .filter_map(|v| v.as_u64().map(|n| n as u8))
+        .collect();
+    parse_salt(&bytes)
+}
+
 /// The NEAR Intents message for a transfer, as JSON text.
 pub fn build_message(cfg: &Config, i: &Intent) -> Result<String, String> {
     let units = (i.amount_cents as u128) * UNITS_PER_CENT;
@@ -205,6 +240,16 @@ mod tests {
         let (cfg, s) = setup();
         let g = fake("ASK_OWNER", false, intent("acme.testnet"));
         assert!(handle(&cfg, &g, &s, req(intent("acme.testnet"), Some("dec_1"))).is_err());
+    }
+
+    #[test]
+    fn parses_the_real_current_salt_response() {
+        // Bytes returned by the live intents.near current_salt view call: the JSON string "252812b3".
+        let live = [34u8, 50, 53, 50, 56, 49, 50, 98, 51, 34];
+        assert_eq!(parse_salt(&live).unwrap(), [0x25, 0x28, 0x12, 0xb3]);
+        assert!(parse_salt(b"\"zzzzzzzz\"").is_err());
+        assert!(parse_salt(b"\"abc\"").is_err());
+        assert!(parse_salt(b"not json").is_err());
     }
 
     #[test]
