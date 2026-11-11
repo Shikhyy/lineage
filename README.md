@@ -118,7 +118,9 @@ curl -X POST localhost:8090/sign-intent -d '{"run_id":"r1","intent":{"invoice_id
 
 Config: `GUARD_URL`, `NEAR_ACCOUNT_ID`, `NEAR_SECRET_KEY` (`ed25519:...`), `NEAR_NETWORK`, `ADAPTER_PORT`. With no key it uses an ephemeral one and says so. `ASK_OWNER` and `BLOCK` return no signature; after the owner approves, re-submit with `decision_id` and the identical intent. `cargo test` covers the NEP-413 byte layout and signing, and the allow/ask/block paths against a fake guard. I also ran the Go guard and the adapter together by hand: a legitimate intent was signed, a destination swap was held for approval, and a 30-day deadline was blocked.
 
-What is **not** verified: the message layout and the NEP-413 details are written from memory of the specs and have not been checked against NEAR's docs or a live verifier contract; the adapter only signs and does not submit to a solver relay or broadcast anything; and no real NEAR Intents transaction has been made.
+Checked against the published NEP-413 spec and the NEAR Intents Verifier docs: the `2^31 + 413` tag, payload field order, sha256-then-ed25519, the `intents.near` recipient, the `transfer` intent shape, and the `{standard, payload:{recipient, nonce, message}, public_key, signature}` wrapper that `execute_intents` takes. The Verifier requires the first 4 bytes of each 32-byte nonce to equal its current salt, so set `INTENTS_SALT` (8 hex characters, read from the contract's `current_salt` view method); without it nonces are fully random and a real Verifier would reject them.
+
+What is **not** verified: no signature has been tested against a live Verifier contract; the encoding of the optional `callbackUrl` follows standard Borsh because the spec page does not spell it out; the USDC decimals (6) are assumed for the cents-to-units conversion; the adapter only signs and does not submit to a solver relay or broadcast anything; and no real NEAR Intents transaction has been made.
 
 ## Limitations
 
