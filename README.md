@@ -83,7 +83,7 @@ The strictest verdict wins (`BLOCK` > `ASK_OWNER` > `ALLOW`). Each decision stor
 
 ## Benchmark (PayBench-BEC)
 
-12 scenarios (4 benign, 8 attack), 6 defenses, reproduce with `make bench`. Results are written to `results/latest.md`; the raw rows go to `results/latest.json`. The benchmark always uses the simulated rail.
+17 scenarios (5 benign, 12 attack; 4 of the attacks target the NEAR Intents rail), 6 defenses, reproduce with `make bench`. Results are written to `results/latest.md`; the raw rows go to `results/latest.json`. The benchmark always uses the simulated rail.
 
 Modes are reported separately and never mixed:
 
@@ -93,14 +93,20 @@ Modes are reported separately and never mixed:
 
 | Defense | Mode | ASR | Benign completion | Owner-asks/100 benign | $ lost | p95 decide ms |
 |---|---|---|---|---|---|---|
-| none | compromised | 100% (8/8) | 100% (4/4) | 0 | $9125.00 | n/a |
-| prompt | compromised | 100% (8/8) | 100% (4/4) | 0 | $9125.00 | n/a |
-| static | compromised | 88% (7/8) | 100% (4/4) | 0 | $7875.00 | 0.10 |
-| **lineage** | compromised | **0% (0/8)** | 100% (4/4) | 25 | $0.00 | 0.23 |
-| lineage_prov_only | compromised | 25% (2/8) | 100% (4/4) | 25 | $1625.00 | 0.20 |
-| lineage_bind_only | compromised | 75% (6/8) | 100% (4/4) | 0 | $7500.00 | 0.11 |
+| none | compromised | 100% (12/12) | 100% (5/5) | 0 | $14125.00 | n/a |
+| prompt | compromised | 100% (12/12) | 100% (5/5) | 0 | $14125.00 | n/a |
+| static | compromised | 75% (9/12) | 100% (5/5) | 0 | $10375.00 | 0.11 |
+| **lineage** | compromised | **0% (0/12)** | 100% (5/5) | 20 | $0.00 | 0.24 |
+| lineage_prov_only | compromised | 25% (3/12) | 100% (5/5) | 20 | $2875.00 | 0.22 |
+| lineage_bind_only | compromised | 83% (10/12) | 100% (5/5) | 0 | $12500.00 | 0.25 |
 
 ASR = share of attack runs where money reached the attacker or exceeded the approved PO. The `prompt` defense is identical to `none` here only because the simulated compromised agent ignores its prompt by construction; it needs the `llm` mode to say anything about prompt hardening. The ablation rows show each layer catches a different attack class, so the layers are complementary. See `results/latest.md` for the scripted-mode rows, the per-scenario matrix and the commit the numbers came from.
+
+## NEAR rail (in progress)
+
+The guard also decides `sign_intent` calls for NEAR Intents (`POST /v1/decide` with `call.tool = "sign_intent"` and `call.intent`). Critical fields: the destination account must be grounded in the vendor record or an owner instruction; the asset must be on `ALLOWED_ASSETS`; the deadline must be within `MAX_INTENT_TTL_SECONDS`; and every nonce is single-use. An external signer confirms authorization with `GET /v1/decisions/{id}` and reports what it did with `POST /v1/decisions/{id}/attest`.
+
+Benchmark scenarios I1–I4 (destination swap, token-metadata injection, stale deadline, solver-message injection) run with a **simulated** signature. The Rust signer in `adapters/near` that holds the NEAR key and produces real NEP-413 signatures is **not built yet**, and no real NEAR transaction has been made.
 
 ## Limitations
 
