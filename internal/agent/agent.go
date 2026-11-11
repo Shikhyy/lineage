@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Shikhyy/lineage/internal/audit"
 	"github.com/Shikhyy/lineage/internal/executor"
@@ -77,6 +78,9 @@ type Env struct {
 	Audit *audit.Log
 	Exec  *executor.Executor
 	Guard guard.Config
+
+	// OnDecide, if set, receives the latency of each guard decision.
+	OnDecide func(time.Duration)
 }
 
 // Result summarizes a finished run.
@@ -364,7 +368,11 @@ func (t *toolbox) pay(ctx context.Context, tc ToolCall) string {
 		return t.execute(ctx, d.ID, a)
 	}
 	g := guard.New(cfg, rec, t.env.Audit)
+	started := time.Now()
 	r, err := g.DecideAndRecord(t.run.ID, guard.Call{Tool: "pay_vendor", Args: a}, t.ctx.ids())
+	if t.env.OnDecide != nil {
+		t.env.OnDecide(time.Since(started))
+	}
 	if err != nil {
 		return "error: " + err.Error()
 	}

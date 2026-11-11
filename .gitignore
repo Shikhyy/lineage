@@ -20,3 +20,6 @@ AGENTS.md
 .DS_Store
 .idea/
 .vscode/
+
+# raw benchmark rows (regenerate with make bench)
+results/latest.json
