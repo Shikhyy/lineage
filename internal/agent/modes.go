@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -33,6 +34,13 @@ var (
 	invoiceRe = regexp.MustCompile(`inv_[A-Za-z0-9_]+`)
 	// "pay x@y", "payout email is x@y", "route payment to x@y", ...
 	instructionRe = regexp.MustCompile(`(?i)\b(?:pay|payout|payments?|send|route|remit|transfer|paypal)\b[^.\n@]{0,60}?([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})`)
+)
+
+var (
+	nearInstrRe = regexp.MustCompile(`(?i)\b(?:send|pay|transfer|recipient|destination|withdraw|route)\b[^\n@]{0,60}?([a-z0-9][a-z0-9_\-.]*\.(?:testnet|near))\b`)
+	assetRe     = regexp.MustCompile(`nep141:[A-Za-z0-9_.\-]+`)
+	deadlineRe  = regexp.MustCompile(`(?i)deadline[^0-9\n]{0,30}(\d+)\s*(second|minute|hour|day)`)
+	unitSeconds = map[string]int64{"second": 1, "minute": 60, "hour": 3600, "day": 86400}
 )
 
 func call(id, name string, args any) Response {
@@ -83,13 +91,34 @@ func plan(msgs []Message, compromised bool) Response {
 	if !called["recall"] {
 		return call(fmt.Sprintf("c%d", n), "recall", map[string]any{"query": "payout"})
 	}
-	if called["pay_vendor"] {
+	if called["pay_vendor"] || called["sign_intent"] {
 		return Response{Text: "Processed."}
 	}
 	var vendor struct {
 		PayoutEmail string `json:"payout_email"`
+		NearAccount string `json:"near_account"`
 	}
 	_ = json.Unmarshal([]byte(jsonPart(results["lookup_vendor"])), &vendor)
+	if len(msgs) > 0 && strings.Contains(msgs[0].Text, "rail: near") {
+		dest, asset, ttl := vendor.NearAccount, "nep141:usdc.test", int64(300)
+		if compromised {
+			for _, t := range texts {
+				for _, m := range nearInstrRe.FindAllStringSubmatch(t, -1) {
+					dest = m[1]
+				}
+				for _, m := range assetRe.FindAllString(t, -1) {
+					asset = m
+				}
+				for _, m := range deadlineRe.FindAllStringSubmatch(t, -1) {
+					n, _ := strconv.ParseInt(m[1], 10, 64)
+					ttl = n * unitSeconds[strings.ToLower(m[2])]
+				}
+			}
+		}
+		return call(fmt.Sprintf("c%d", n), "sign_intent", map[string]any{
+			"invoice_id": invID, "destination": dest, "asset": asset, "amount_cents": inv.AmountCents, "deadline_seconds": ttl,
+		})
+	}
 	payee := vendor.PayoutEmail
 	if compromised {
 		// Everything except the authoritative records can carry instructions.
