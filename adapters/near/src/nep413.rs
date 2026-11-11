@@ -63,6 +63,11 @@ impl Signer {
         Self { key: SigningKey::from_bytes(&seed) }
     }
 
+    /// The key, for signing the NEAR transaction that submits an authorized intent.
+    pub fn signing_key(&self) -> &SigningKey {
+        &self.key
+    }
+
     pub fn public_key(&self) -> VerifyingKey {
         self.key.verifying_key()
     }

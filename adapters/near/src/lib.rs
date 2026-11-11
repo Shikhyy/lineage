@@ -2,6 +2,7 @@
 //! guard authorizes the exact intent. The agent never holds the key.
 pub mod guard;
 pub mod nep413;
+pub mod tx;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use guard::{GuardApi, Intent};
@@ -19,6 +20,14 @@ pub struct Config {
     /// (the remaining 28 are unique per account). When unset, nonces are fully random and the
     /// response says so, because a real Verifier would reject them.
     pub salt: Option<[u8; 4]>,
+    /// Present only when the operator opted in with NEAR_ALLOW_SUBMIT=1.
+    pub submit: Option<SubmitCfg>,
+}
+
+/// Where and how an authorized intent is broadcast.
+pub struct SubmitCfg {
+    pub rpc_url: String,
+    pub verifier: String,
 }
 
 #[derive(Deserialize)]
@@ -30,6 +39,9 @@ pub struct SignRequest {
     /// Set when re-submitting after the owner approved an earlier ASK_OWNER decision.
     #[serde(default)]
     pub decision_id: Option<String>,
+    /// Also broadcast `execute_intents` on NEAR. Ignored unless the operator enabled submission.
+    #[serde(default)]
+    pub submit: bool,
 }
 
 fn iso(unix: i64) -> Result<String, String> {
@@ -137,13 +149,27 @@ pub fn handle(cfg: &Config, g: &dyn GuardApi, signer: &nep413::Signer, mut req: 
     let sig_str = format!("ed25519:{}", bs58::encode(sig.to_bytes()).into_string());
     // Best effort: the signature is valid either way, but the audit trail should record it.
     let attested = g.attest(&decision_id, &sig_str, "signed NEP-413 intent").is_ok();
+    // The shape the Verifier's execute_intents expects.
+    let signed = json!({"standard": "nep413",
+                   "payload": {"recipient": INTENTS_RECIPIENT, "nonce": req.intent.nonce, "message": message},
+                   "public_key": signer.public_key_string(), "signature": sig_str});
+    let submission = if !req.submit {
+        Value::Null
+    } else {
+        match &cfg.submit {
+            None => json!({"status": "skipped", "reason": "NEAR_ALLOW_SUBMIT=1 is not set on the adapter"}),
+            Some(sc) => match tx::submit_execute_intents(&sc.rpc_url, &sc.verifier, &cfg.account_id, signer.signing_key(), &signer.public_key_string(), &signed) {
+                Ok(resp) => {
+                    let _ = g.attest(&decision_id, &sig_str, "submitted execute_intents to NEAR");
+                    json!({"status": "submitted", "rpc_response": resp})
+                }
+                Err(e) => json!({"status": "failed", "error": e}),
+            },
+        }
+    };
     Ok(json!({
         "decision": "ALLOW", "decision_id": decision_id, "attested": attested,
-        "salt_checked": cfg.salt.is_some(),
-        // The shape the Verifier's execute_intents expects.
-        "signed": {"standard": "nep413",
-                   "payload": {"recipient": INTENTS_RECIPIENT, "nonce": req.intent.nonce, "message": message},
-                   "public_key": signer.public_key_string(), "signature": sig_str},
+        "salt_checked": cfg.salt.is_some(), "signed": signed, "submission": submission,
     }))
 }
 
@@ -185,11 +211,11 @@ mod tests {
     }
 
     fn setup() -> (Config, nep413::Signer) {
-        (Config { account_id: "agent.testnet".into(), salt: None }, nep413::Signer::from_seed([5u8; 32]))
+        (Config { account_id: "agent.testnet".into(), salt: None, submit: None }, nep413::Signer::from_seed([5u8; 32]))
     }
 
     fn req(i: Intent, decision_id: Option<&str>) -> SignRequest {
-        SignRequest { run_id: "r1".into(), intent: i, context: vec![], decision_id: decision_id.map(String::from) }
+        SignRequest { run_id: "r1".into(), intent: i, context: vec![], decision_id: decision_id.map(String::from), submit: false }
     }
 
     #[test]
@@ -255,7 +281,7 @@ mod tests {
     #[test]
     fn nonce_must_carry_the_verifier_salt() {
         let s = nep413::Signer::from_seed([5u8; 32]);
-        let cfg = Config { account_id: "agent.testnet".into(), salt: Some([1, 2, 3, 4]) };
+        let cfg = Config { account_id: "agent.testnet".into(), salt: Some([1, 2, 3, 4]), submit: None };
         // A generated nonce starts with the salt.
         let mut empty = intent("acme.testnet");
         empty.nonce = String::new();

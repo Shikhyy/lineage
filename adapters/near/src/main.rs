@@ -1,4 +1,4 @@
-use lineage_near::{fetch_salt, guard::HttpGuard, handle, nep413::Signer, Config, SignRequest};
+use lineage_near::{fetch_salt, guard::HttpGuard, handle, nep413::Signer, Config, SignRequest, SubmitCfg};
 
 fn hex(b: &[u8]) -> String {
     b.iter().map(|x| format!("{x:02x}")).collect()
@@ -34,6 +34,12 @@ fn main() {
         (None, Err(e)) => eprintln!("could not read the Verifier salt ({e}); nonces will be fully random and a real Verifier would reject them"),
     }
     let account_id = env("NEAR_ACCOUNT_ID", "lineage-demo.testnet");
+    let allow_submit = env("NEAR_ALLOW_SUBMIT", "0") == "1";
+    if allow_submit {
+        eprintln!("NEAR_ALLOW_SUBMIT=1: authorized intents may be BROADCAST to {rpc_url} (verifier {verifier})");
+    } else {
+        eprintln!("submission is off: the adapter only signs (set NEAR_ALLOW_SUBMIT=1 to allow broadcasting)");
+    }
     let network = env("NEAR_NETWORK", "testnet");
 
     let signer = match std::env::var("NEAR_SECRET_KEY").ok().filter(|v| !v.is_empty()) {
@@ -69,6 +75,7 @@ fn main() {
                         &Config {
                             account_id: account_id.clone(),
                             salt: fixed_salt.or_else(|| fetch_salt(&rpc_url, &verifier).ok()),
+                            submit: allow_submit.then(|| SubmitCfg { rpc_url: rpc_url.clone(), verifier: verifier.clone() }),
                         },
                         &guard,
                         &signer,
