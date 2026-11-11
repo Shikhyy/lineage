@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: lineage
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: VENDOR_A_EMAIL
+        sync: false
+      - key: VENDOR_B_EMAIL
+        sync: false
+      - key: ATTACKER_EMAIL
+        sync: false
+      - key: OWNER_SECRET
+        generateValue: true
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false

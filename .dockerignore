@@ -1,0 +1,7 @@
+.git
+.env
+data/
+bin/
+devdocs/
+docs/
+*.db
