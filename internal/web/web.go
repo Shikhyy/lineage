@@ -13,6 +13,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/Shikhyy/lineage/internal/agent"
@@ -165,6 +166,13 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Benign scenarios first, then attacks, each in class order.
+	sort.SliceStable(scs, func(i, j int) bool {
+		if (scs[i].Kind == "benign") != (scs[j].Kind == "benign") {
+			return scs[i].Kind == "benign"
+		}
+		return scs[i].Class < scs[j].Class
+	})
 	runs, _ := s.Rec.ListRuns(10)
 	s.render(w, r, "index", "Run a scenario", indexData{Scenarios: scs, Runs: runs, HasLLM: s.LLM != nil, Model: s.LLMModel, Defenses: agent.AllDefenses})
 }
@@ -303,11 +311,44 @@ type stepView struct {
 	Decision *decisionView
 }
 
+type payoutView struct {
+	Payee, Rail, Status string
+	Cents               int64
+}
+
 type runData struct {
-	Run      records.Run
-	Steps    []stepView
-	Payments []records.Payment
-	Rail     string
+	Run          records.Run
+	Steps        []stepView
+	Payouts      []payoutView
+	Rail         string
+	Outcome      string
+	OutcomeClass string
+}
+
+// summarize states plainly what happened to the money in a run.
+func summarize(payouts []payoutView, decs []decisionView) (string, string) {
+	if len(payouts) > 0 {
+		var parts []string
+		for _, p := range payouts {
+			parts = append(parts, fmt.Sprintf("$%d.%02d to %s", p.Cents/100, p.Cents%100, p.Payee))
+		}
+		return "Money moved: " + strings.Join(parts, "; ") + ".", "moved"
+	}
+	pending, blocked := 0, 0
+	for _, d := range decs {
+		if d.Approval != nil && d.Approval.Status == "pending" {
+			pending++
+		} else if d.Verdict == string(guard.Block) {
+			blocked++
+		}
+	}
+	switch {
+	case pending > 0:
+		return fmt.Sprintf("No money moved. %d payment(s) waiting for owner approval.", pending), "safe"
+	case blocked > 0:
+		return fmt.Sprintf("No money moved. The guard blocked %d payment(s).", blocked), "safe"
+	}
+	return "No money moved.", "safe"
 }
 
 func (s *Server) runPage(w http.ResponseWriter, r *http.Request) {
@@ -336,7 +377,24 @@ func (s *Server) runPage(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Steps = append(data.Steps, sv)
 	}
-	data.Payments, _ = s.Rec.RunPayments(run.ID)
+	pays, _ := s.Rec.RunPayments(run.ID)
+	for _, p := range pays {
+		var a struct {
+			Payee       string `json:"payee"`
+			Destination string `json:"destination"`
+			AmountCents int64  `json:"amount_cents"`
+		}
+		_ = json.Unmarshal([]byte(p.RequestJSON), &a)
+		if a.Destination != "" {
+			a.Payee = a.Destination
+		}
+		data.Payouts = append(data.Payouts, payoutView{Payee: a.Payee, Cents: a.AmountCents, Rail: p.Rail, Status: p.Status})
+	}
+	var all []decisionView
+	for _, dv := range byID {
+		all = append(all, dv)
+	}
+	data.Outcome, data.OutcomeClass = summarize(data.Payouts, all)
 	s.render(w, r, "run", "Run "+run.ID, data)
 }
 

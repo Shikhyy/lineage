@@ -41,7 +41,11 @@ th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--lin
 th { color: var(--muted); font-weight: 600; }
 select, input { background: #0d1117; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; max-width: 100%; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
-.runform { display: grid; grid-template-columns: 2fr 1.3fr 1fr auto; gap: 14px; align-items: end; }
+.runform { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 14px; align-items: end; }
+.runform select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.outcome { border-radius: 8px; padding: 12px 16px; margin: 14px 0; font-weight: 600; border: 1px solid var(--line); }
+.outcome.safe { background: #12361d; color: #56d364; border-color: #1f6b34; }
+.outcome.moved { background: #3a2c08; color: #e3b341; border-color: #6b5010; }
 button { background: var(--accent); color: #04121f; border: 0; border-radius: 6px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
 button.ok { background: var(--allow); color: #04140a; } button.danger { background: var(--block); color: #1a0504; }
 button.link { background: none; color: var(--accent); padding: 0; font-weight: 400; }

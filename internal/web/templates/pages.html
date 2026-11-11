@@ -90,6 +90,7 @@
 {{define "run"}}{{template "head" .}}
 <h1>Run <code>{{.Data.Run.ID}}</code></h1>
 <p>Scenario <b>{{.Data.Run.ScenarioID}}</b> · agent mode <b>{{modeLabel .Data.Run.Mode}}</b> · defense <b>{{.Data.Run.Defense}}</b> · rail <b>{{.Data.Rail}}</b></p>
+<div class="outcome {{.Data.OutcomeClass}}">{{.Data.Outcome}}</div>
 <h2>Timeline</h2>
 <ol class="timeline">
 {{range .Data.Steps}}
@@ -99,8 +100,8 @@
   </li>
 {{end}}
 </ol>
-{{if .Data.Payments}}<h2>Payouts</h2><table><tr><th>Payment</th><th>Rail</th><th>Status</th></tr>
-{{range .Data.Payments}}<tr><td><code>{{.ID}}</code></td><td>{{.Rail}}</td><td>{{.Status}}</td></tr>{{end}}</table>
+{{if .Data.Payouts}}<h2>Payouts</h2><table><tr><th>To</th><th>Amount</th><th>Rail</th><th>Status</th></tr>
+{{range .Data.Payouts}}<tr><td><code>{{.Payee}}</code></td><td>{{cents .Cents}}</td><td>{{.Rail}}</td><td>{{.Status}}</td></tr>{{end}}</table>
 {{else}}<h2>Payouts</h2><p class="muted">No money moved in this run.</p>{{end}}
 {{template "foot" .}}{{end}}
 
