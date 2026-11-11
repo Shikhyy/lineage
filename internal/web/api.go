@@ -16,6 +16,8 @@ func (s *Server) apiRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/fragments", s.apiFragment)
 	mux.HandleFunc("POST /v1/decide", s.apiDecide)
 	mux.HandleFunc("POST /v1/execute", s.apiExecute)
+	mux.HandleFunc("GET /v1/decisions/{id}", s.apiDecision)
+	mux.HandleFunc("POST /v1/decisions/{id}/attest", s.apiAttest)
 	mux.HandleFunc("GET /v1/approvals", s.apiApprovals)
 	mux.HandleFunc("POST /v1/approvals/{id}/approve", s.apiResolve("approved"))
 	mux.HandleFunc("POST /v1/approvals/{id}/reject", s.apiResolve("rejected"))
@@ -141,6 +143,48 @@ func (s *Server) apiExecute(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeJSON(w, http.StatusOK, map[string]any{"payment": out.Payment, "duplicate": out.Duplicate, "rail": s.Exec.RailName()})
 	}
+}
+
+// GET /v1/decisions/{id} lets an external signer (the NEAR adapter) confirm
+// that a decision is authorized: ALLOW, or ASK_OWNER with an approved approval.
+func (s *Server) apiDecision(w http.ResponseWriter, r *http.Request) {
+	d, err := s.Rec.GetDecision(r.PathValue("id"))
+	if err != nil {
+		apiErr(w, http.StatusNotFound, "decision not found")
+		return
+	}
+	approval := ""
+	if ap, err := s.Rec.ApprovalForDecision(d.ID); err == nil {
+		approval = ap.Status
+	}
+	authorized := d.Decision == string(guard.Allow) || (d.Decision == string(guard.AskOwner) && approval == "approved")
+	writeJSON(w, http.StatusOK, map[string]any{
+		"decision_id": d.ID, "tool": d.Tool, "decision": d.Decision, "approval": approval,
+		"authorized": authorized, "args_hash": d.ArgsHash, "args_json": json.RawMessage(d.ArgsJSON),
+	})
+}
+
+// POST /v1/decisions/{id}/attest records, in the audit log, that an external
+// signer acted on a decision (for example a signed NEAR intent and its reference).
+func (s *Server) apiAttest(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Reference string `json:"reference"`
+		Note      string `json:"note"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	d, err := s.Rec.GetDecision(r.PathValue("id"))
+	if err != nil {
+		apiErr(w, http.StatusNotFound, "decision not found")
+		return
+	}
+	rec, err := s.Audit.Append("external_action", map[string]string{"decision_id": d.ID, "tool": d.Tool, "reference": in.Reference, "note": in.Note})
+	if err != nil {
+		apiErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"audit_seq": rec.Seq})
 }
 
 func (s *Server) apiApprovals(w http.ResponseWriter, r *http.Request) {

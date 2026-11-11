@@ -99,6 +99,10 @@ func main() {
 	gcfg.DailyCapCents = envInt("DAILY_CAP_CENTS", gcfg.DailyCapCents)
 	gcfg.ToleranceBPS = envInt("PO_TOLERANCE_BPS", gcfg.ToleranceBPS)
 	gcfg.Currencies = strings.Split(env("ALLOWED_CURRENCIES", "USD"), ",")
+	if v := os.Getenv("ALLOWED_ASSETS"); v != "" {
+		gcfg.AllowedAssets = strings.Split(v, ",")
+	}
+	gcfg.MaxIntentTTL = time.Duration(envInt("MAX_INTENT_TTL_SECONDS", 300)) * time.Second
 
 	// Rail: PayPal sandbox when credentials exist, otherwise a labelled simulation.
 	var rail executor.Rail = executor.SimRail{}
