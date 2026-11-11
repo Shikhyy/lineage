@@ -92,6 +92,34 @@ func (s *Store) VendorByEmail(email string) (Vendor, error) {
 	return Vendor{}, ErrNotFound
 }
 
+// VendorByNear finds a vendor by registered NEAR account (normalized).
+func (s *Store) VendorByNear(account string) (Vendor, error) {
+	want := prov.Normalize(account)
+	vs, err := s.ListVendors()
+	if err != nil {
+		return Vendor{}, err
+	}
+	for _, v := range vs {
+		if v.NearAccount != "" && prov.Normalize(v.NearAccount) == want {
+			return v, nil
+		}
+	}
+	return Vendor{}, ErrNotFound
+}
+
+// NonceUsed reports whether an intent nonce was already consumed.
+func (s *Store) NonceUsed(nonce string) (bool, error) {
+	var n int
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM intent_nonces WHERE nonce=?`, nonce).Scan(&n)
+	return n > 0, err
+}
+
+// UseNonce consumes a nonce; it fails if the nonce was already used.
+func (s *Store) UseNonce(nonce string) error {
+	_, err := s.db.Exec(`INSERT INTO intent_nonces(nonce, used_at) VALUES(?,?)`, nonce, now())
+	return err
+}
+
 func (s *Store) ListVendors() ([]Vendor, error) {
 	rows, err := s.db.Query(`SELECT ` + vendorCols + ` FROM vendors ORDER BY id`)
 	if err != nil {

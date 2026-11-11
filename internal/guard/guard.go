@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Shikhyy/lineage/internal/audit"
 	"github.com/Shikhyy/lineage/internal/prov"
@@ -65,6 +66,10 @@ type Config struct {
 	ToleranceBPS  int64 // allowed overage on the PO, in basis points
 	Currencies    []string
 
+	// Intent rules (sign_intent): asset allowlist and maximum deadline.
+	AllowedAssets []string
+	MaxIntentTTL  time.Duration
+
 	StaticEnabled  bool // C1
 	BindingEnabled bool // C2
 	ProvEnabled    bool // C3
@@ -77,6 +82,8 @@ func DefaultConfig() Config {
 		DailyCapCents:  1500000,
 		ToleranceBPS:   0,
 		Currencies:     []string{"USD"},
+		AllowedAssets:  []string{"nep141:usdc.test"}, // placeholder; set ALLOWED_ASSETS for real asset ids
+		MaxIntentTTL:   5 * time.Minute,
 		StaticEnabled:  true,
 		BindingEnabled: true,
 		ProvEnabled:    true,
@@ -102,8 +109,9 @@ func (a PayArgs) Hash() string {
 
 // Call is a tool call submitted for a decision.
 type Call struct {
-	Tool string  `json:"tool"`
-	Args PayArgs `json:"args"`
+	Tool   string      `json:"tool"`
+	Args   PayArgs     `json:"args"`
+	Intent *IntentArgs `json:"intent,omitempty"` // set when Tool is sign_intent
 }
 
 // Reason explains part of a decision.
@@ -145,6 +153,9 @@ type Guard struct {
 	cfg   Config
 	rec   *records.Store
 	audit *audit.Log // optional
+
+	// Now overrides the clock (tests).
+	Now func() time.Time
 }
 
 // New returns a Guard. audit may be nil (pure evaluation, e.g. in tests).
@@ -174,6 +185,9 @@ func (g *Guard) Decide(call Call, fragIDs []string) (Result, error) {
 		}
 	}
 
+	if call.Tool == ToolSignIntent {
+		return g.decideIntent(call, fragIDs)
+	}
 	if call.Tool != "pay_vendor" {
 		add(UnsupportedTool, fmt.Sprintf("tool %q is not a guarded payment tool", call.Tool), Block)
 		return res, nil
@@ -307,7 +321,18 @@ func (g *Guard) DecideAndRecord(runID string, call Call, fragIDs []string) (Reco
 	if err != nil {
 		return Recorded{}, err
 	}
-	argsJSON, _ := json.Marshal(call.Args)
+	var argsJSON []byte
+	if call.Tool == ToolSignIntent {
+		argsJSON, _ = json.Marshal(call.Intent)
+		// Consume the nonce so a signed intent can never be replayed.
+		if call.Intent != nil && res.Verdict != Block {
+			if err := g.rec.UseNonce(call.Intent.Nonce); err != nil {
+				return Recorded{}, fmt.Errorf("nonce: %w", err)
+			}
+		}
+	} else {
+		argsJSON, _ = json.Marshal(call.Args)
+	}
 	reasons, _ := json.Marshal(res.Reasons)
 	lineage, _ := json.Marshal(res.Lineage)
 	d, err := g.rec.SaveDecision(records.Decision{
