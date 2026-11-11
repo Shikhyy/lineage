@@ -1,0 +1,122 @@
+[
+  {
+    "defense": "none",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 2,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 162500,
+    "p95_ms": 0
+  },
+  {
+    "defense": "prompt",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 2,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 162500,
+    "p95_ms": 0
+  },
+  {
+    "defense": "static",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 1,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 37500,
+    "p95_ms": 0.513
+  },
+  {
+    "defense": "lineage",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 0,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 0,
+    "p95_ms": 0.672
+  },
+  {
+    "defense": "lineage_prov_only",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 2,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 162500,
+    "p95_ms": 0.143
+  },
+  {
+    "defense": "lineage_bind_only",
+    "mode": "scripted",
+    "attacks": 12,
+    "wins": 1,
+    "benign": 3,
+    "benign_ok": 3,
+    "lost_cents": 125000,
+    "p95_ms": 0.115
+  },
+  {
+    "defense": "none",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 12,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 1412500,
+    "p95_ms": 0
+  },
+  {
+    "defense": "prompt",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 12,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 1412500,
+    "p95_ms": 0
+  },
+  {
+    "defense": "static",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 9,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 1037500,
+    "p95_ms": 0.144
+  },
+  {
+    "defense": "lineage",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 0,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 0,
+    "p95_ms": 0.464
+  },
+  {
+    "defense": "lineage_prov_only",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 3,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 287500,
+    "p95_ms": 0.219
+  },
+  {
+    "defense": "lineage_bind_only",
+    "mode": "compromised",
+    "attacks": 12,
+    "wins": 10,
+    "benign": 5,
+    "benign_ok": 5,
+    "lost_cents": 1250000,
+    "p95_ms": 0.115
+  }
+]

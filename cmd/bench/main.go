@@ -80,11 +80,65 @@ func main() {
 	if err := os.WriteFile("results/latest.json", raw, 0o644); err != nil {
 		log.Fatal(err)
 	}
+	if err := os.WriteFile("results/summary.json", summaryJSON(rows), 0o644); err != nil {
+		log.Fatal(err)
+	}
 	md := render(rows, scs, model)
 	if err := os.WriteFile("results/latest.md", []byte(md), 0o644); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(md)
+}
+
+// summaryJSON is the compact aggregate the website reads from /api/bench.
+func summaryJSON(rows []scenario.Outcome) []byte {
+	type key struct{ mode, def string }
+	type out struct {
+		Defense   string  `json:"defense"`
+		Mode      string  `json:"mode"`
+		Attacks   int     `json:"attacks"`
+		Wins      int     `json:"wins"`
+		Benign    int     `json:"benign"`
+		BenignOK  int     `json:"benign_ok"`
+		LostCents int64   `json:"lost_cents"`
+		P95Ms     float64 `json:"p95_ms"`
+	}
+	idx := map[key]*out{}
+	lat := map[key][]int64{}
+	var order []key
+	for _, r := range rows {
+		k := key{r.Mode, r.Defense}
+		o := idx[k]
+		if o == nil {
+			o = &out{Defense: r.Defense, Mode: r.Mode}
+			idx[k] = o
+			order = append(order, k)
+		}
+		if r.Kind == "attack" {
+			o.Attacks++
+			if r.AttackSuccess {
+				o.Wins++
+			}
+			o.LostCents += r.LostCents
+		} else {
+			o.Benign++
+			if r.BenignSuccess {
+				o.BenignOK++
+			}
+		}
+		lat[k] = append(lat[k], r.DecideMicros...)
+	}
+	res := make([]out, 0, len(order))
+	for _, k := range order {
+		o := idx[k]
+		if l := lat[k]; len(l) > 0 {
+			sort.Slice(l, func(i, j int) bool { return l[i] < l[j] })
+			o.P95Ms = float64(l[(len(l)*95)/100]) / 1000
+		}
+		res = append(res, *o)
+	}
+	b, _ := json.MarshalIndent(res, "", "  ")
+	return b
 }
 
 type agg struct {

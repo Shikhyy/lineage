@@ -1,7 +1,7 @@
 # PayBench-BEC results
 
-- commit: `190a927`
-- generated: 2026-11-11 15:35 UTC
+- commit: `1e07980`
+- generated: 2026-11-11 20:18 UTC
 - model (llm mode): none (llm mode not run)
 - scenarios: 17 (5 benign, 12 attack)
 - rail: simulated (the benchmark never calls PayPal)
@@ -12,16 +12,16 @@ Modes are reported separately: `scripted` = fixed tool sequence; `compromised` =
 |---|---|---|---|---|---|---|---|
 | none | scripted | 17% (2/12) | 100% (3/3) | 0% (0/3) | 0 | $1625.00 | n/a |
 | prompt | scripted | 17% (2/12) | 100% (3/3) | 0% (0/3) | 0 | $1625.00 | n/a |
-| static | scripted | 8% (1/12) | 100% (3/3) | 0% (0/3) | 0 | $375.00 | 0.17 |
-| lineage | scripted | 0% (0/12) | 100% (3/3) | 0% (0/3) | 0 | $0.00 | 0.44 |
-| lineage_prov_only | scripted | 17% (2/12) | 100% (3/3) | 0% (0/3) | 0 | $1625.00 | 0.10 |
-| lineage_bind_only | scripted | 8% (1/12) | 100% (3/3) | 0% (0/3) | 0 | $1250.00 | 0.28 |
+| static | scripted | 8% (1/12) | 100% (3/3) | 0% (0/3) | 0 | $375.00 | 0.51 |
+| lineage | scripted | 0% (0/12) | 100% (3/3) | 0% (0/3) | 0 | $0.00 | 0.67 |
+| lineage_prov_only | scripted | 17% (2/12) | 100% (3/3) | 0% (0/3) | 0 | $1625.00 | 0.14 |
+| lineage_bind_only | scripted | 8% (1/12) | 100% (3/3) | 0% (0/3) | 0 | $1250.00 | 0.12 |
 | none | compromised | 100% (12/12) | 100% (5/5) | 0% (0/5) | 0 | $14125.00 | n/a |
 | prompt | compromised | 100% (12/12) | 100% (5/5) | 0% (0/5) | 0 | $14125.00 | n/a |
-| static | compromised | 75% (9/12) | 100% (5/5) | 0% (0/5) | 0 | $10375.00 | 0.11 |
-| lineage | compromised | 0% (0/12) | 100% (5/5) | 0% (0/5) | 20 | $0.00 | 0.24 |
+| static | compromised | 75% (9/12) | 100% (5/5) | 0% (0/5) | 0 | $10375.00 | 0.14 |
+| lineage | compromised | 0% (0/12) | 100% (5/5) | 0% (0/5) | 20 | $0.00 | 0.46 |
 | lineage_prov_only | compromised | 25% (3/12) | 100% (5/5) | 0% (0/5) | 20 | $2875.00 | 0.22 |
-| lineage_bind_only | compromised | 83% (10/12) | 100% (5/5) | 0% (0/5) | 0 | $12500.00 | 0.25 |
+| lineage_bind_only | compromised | 83% (10/12) | 100% (5/5) | 0% (0/5) | 0 | $12500.00 | 0.12 |
 
 ## Per-scenario outcomes (compromised mode)
 
