@@ -102,11 +102,23 @@ Modes are reported separately and never mixed:
 
 ASR = share of attack runs where money reached the attacker or exceeded the approved PO. The `prompt` defense is identical to `none` here only because the simulated compromised agent ignores its prompt by construction; it needs the `llm` mode to say anything about prompt hardening. The ablation rows show each layer catches a different attack class, so the layers are complementary. See `results/latest.md` for the scripted-mode rows, the per-scenario matrix and the commit the numbers came from.
 
-## NEAR rail (in progress)
+## NEAR rail
 
 The guard also decides `sign_intent` calls for NEAR Intents (`POST /v1/decide` with `call.tool = "sign_intent"` and `call.intent`). Critical fields: the destination account must be grounded in the vendor record or an owner instruction; the asset must be on `ALLOWED_ASSETS`; the deadline must be within `MAX_INTENT_TTL_SECONDS`; and every nonce is single-use. An external signer confirms authorization with `GET /v1/decisions/{id}` and reports what it did with `POST /v1/decisions/{id}/attest`.
 
-Benchmark scenarios I1–I4 (destination swap, token-metadata injection, stale deadline, solver-message injection) run with a **simulated** signature. The Rust signer in `adapters/near` that holds the NEAR key and produces real NEP-413 signatures is **not built yet**, and no real NEAR transaction has been made.
+Benchmark scenarios I1–I4 (destination swap, token-metadata injection, stale deadline, solver-message injection) run with a **simulated** signature.
+
+`adapters/near` is a Rust signer (`lineage-near`) that holds the NEAR key and signs a NEP-413 message only after the guard authorizes the exact intent. The agent never sees the key.
+
+```bash
+make run                                   # guard on :8080
+cd adapters/near && cargo run              # adapter on :8090
+curl -X POST localhost:8090/sign-intent -d '{"run_id":"r1","intent":{"invoice_id":"inv_1","destination":"acme.testnet","asset":"nep141:usdc.test","amount_cents":125000,"deadline_unix":<now+120>,"nonce":""}}'
+```
+
+Config: `GUARD_URL`, `NEAR_ACCOUNT_ID`, `NEAR_SECRET_KEY` (`ed25519:...`), `NEAR_NETWORK`, `ADAPTER_PORT`. With no key it uses an ephemeral one and says so. `ASK_OWNER` and `BLOCK` return no signature; after the owner approves, re-submit with `decision_id` and the identical intent. `cargo test` covers the NEP-413 byte layout and signing, and the allow/ask/block paths against a fake guard. I also ran the Go guard and the adapter together by hand: a legitimate intent was signed, a destination swap was held for approval, and a 30-day deadline was blocked.
+
+What is **not** verified: the message layout and the NEP-413 details are written from memory of the specs and have not been checked against NEAR's docs or a live verifier contract; the adapter only signs and does not submit to a solver relay or broadcast anything; and no real NEAR Intents transaction has been made.
 
 ## Limitations
 

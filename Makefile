@@ -1,4 +1,7 @@
-.PHONY: run test bench demo lint build
+.PHONY: run test bench demo lint build near-test
+
+near-test:
+	cd adapters/near && cargo test
 
 run:
 	go run ./cmd/lineage
