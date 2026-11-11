@@ -1,0 +1,50 @@
+:root {
+  --bg: #0f1419; --panel: #171e26; --line: #2a3440; --text: #e6edf3; --muted: #8b98a5;
+  --allow: #2ea043; --ask: #d29922; --block: #f85149; --accent: #58a6ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; align-items: center; gap: 24px; padding: 14px 28px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; letter-spacing: .02em; }
+nav { display: flex; gap: 18px; align-items: center; }
+a { color: var(--accent); }
+nav a { text-decoration: none; }
+.banner { background: #3d2f06; color: #f2cc60; padding: 8px 28px; font-size: 14px; border-bottom: 1px solid #5a4510; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 28px 60px; }
+footer { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+h1 { font-size: 28px; margin: 8px 0 12px; } h2 { font-size: 20px; margin: 28px 0 10px; }
+.muted { color: var(--muted); font-size: 14px; }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: #0d1117; padding: 1px 5px; border-radius: 4px; }
+code.wrap { word-break: break-all; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+.card.verdict-allow { border-left: 4px solid var(--allow); }
+.card.verdict-ask_owner { border-left: 4px solid var(--ask); }
+.card.verdict-block { border-left: 4px solid var(--block); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); }
+.v-allow { background: #12361d; color: #56d364; border-color: #1f6b34; }
+.v-ask_owner { background: #3a2c08; color: #e3b341; border-color: #6b5010; }
+.v-block { background: #3d1316; color: #ff7b72; border-color: #7a2328; }
+.t-T0 { background: #3d1316; color: #ff7b72; } .t-T1 { background: #3a2c08; color: #e3b341; }
+.t-T2 { background: #0f2a4a; color: #79c0ff; } .t-T3 { background: #12361d; color: #56d364; }
+.reasons { margin: 6px 0; padding-left: 18px; }
+.lin { margin: 10px 0; padding: 8px 10px; background: #11171e; border-radius: 6px; }
+.tree, .tree ul { list-style: none; padding-left: 16px; margin: 6px 0; border-left: 2px solid var(--line); }
+.snip { color: var(--muted); font-size: 13px; margin: 2px 0 6px; word-break: break-word; }
+.timeline { list-style: none; padding: 0; margin: 0; }
+.step { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #1c242d; }
+.kind { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; }
+.summary { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+.k-payment .summary { color: #56d364; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+select, input { background: #0d1117; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; max-width: 100%; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+.runform { display: grid; grid-template-columns: 2fr 1.3fr 1fr auto; gap: 14px; align-items: end; }
+button { background: var(--accent); color: #04121f; border: 0; border-radius: 6px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+button.ok { background: var(--allow); color: #04140a; } button.danger { background: var(--block); color: #1a0504; }
+button.link { background: none; color: var(--accent); padding: 0; font-weight: 400; }
+form.inline { display: inline; }
+pre.bench { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; }
+@media (max-width: 760px) { .runform { grid-template-columns: 1fr; } .step { grid-template-columns: 1fr; } header { flex-wrap: wrap; } }
