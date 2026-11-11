@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS invoices (
   amount_cents INTEGER NOT NULL,
   currency TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
-  received_fragment_id TEXT NOT NULL DEFAULT ''
+  received_fragment_id TEXT NOT NULL DEFAULT '',
+  paid_at TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS runs (
