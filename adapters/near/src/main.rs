@@ -14,7 +14,18 @@ fn json_response(code: u16, body: serde_json::Value) -> Response<std::io::Cursor
 
 fn main() {
     let guard = HttpGuard { base: env("GUARD_URL", "http://localhost:8080").trim_end_matches('/').to_string() };
-    let cfg = Config { account_id: env("NEAR_ACCOUNT_ID", "lineage-demo.testnet") };
+    let salt = std::env::var("INTENTS_SALT").ok().filter(|v| !v.is_empty()).map(|h| {
+        let b = h.trim_start_matches("0x");
+        let bytes: Vec<u8> = (0..b.len() / 2).filter_map(|i| u8::from_str_radix(&b[2 * i..2 * i + 2], 16).ok()).collect();
+        <[u8; 4]>::try_from(bytes).unwrap_or_else(|_| {
+            eprintln!("INTENTS_SALT must be 4 bytes of hex (8 hex characters)");
+            std::process::exit(1);
+        })
+    });
+    if salt.is_none() {
+        eprintln!("INTENTS_SALT is not set: nonces will be fully random and a real Verifier would reject them");
+    }
+    let cfg = Config { account_id: env("NEAR_ACCOUNT_ID", "lineage-demo.testnet"), salt };
     let network = env("NEAR_NETWORK", "testnet");
 
     let signer = match std::env::var("NEAR_SECRET_KEY").ok().filter(|v| !v.is_empty()) {

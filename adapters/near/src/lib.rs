@@ -15,6 +15,10 @@ pub const UNITS_PER_CENT: u128 = 10_000;
 
 pub struct Config {
     pub account_id: String,
+    /// Current salt of the Verifier contract. The first 4 bytes of every intent nonce must equal it
+    /// (the remaining 28 are unique per account). When unset, nonces are fully random and the
+    /// response says so, because a real Verifier would reject them.
+    pub salt: Option<[u8; 4]>,
 }
 
 #[derive(Deserialize)]
@@ -51,6 +55,9 @@ pub fn handle(cfg: &Config, g: &dyn GuardApi, signer: &nep413::Signer, mut req: 
     if req.intent.nonce.is_empty() {
         let mut n = [0u8; 32];
         rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut n);
+        if let Some(salt) = cfg.salt {
+            n[..4].copy_from_slice(&salt);
+        }
         req.intent.nonce = B64.encode(n);
     }
     let nonce: [u8; 32] = B64
@@ -58,6 +65,11 @@ pub fn handle(cfg: &Config, g: &dyn GuardApi, signer: &nep413::Signer, mut req: 
         .map_err(|_| "nonce must be base64".to_string())?
         .try_into()
         .map_err(|_| "nonce must be exactly 32 bytes".to_string())?;
+    if let Some(salt) = cfg.salt {
+        if nonce[..4] != salt {
+            return Err("nonce does not start with the Verifier's current salt".into());
+        }
+    }
 
     let decision_id = match &req.decision_id {
         Some(id) => {
@@ -92,7 +104,10 @@ pub fn handle(cfg: &Config, g: &dyn GuardApi, signer: &nep413::Signer, mut req: 
     let attested = g.attest(&decision_id, &sig_str, "signed NEP-413 intent").is_ok();
     Ok(json!({
         "decision": "ALLOW", "decision_id": decision_id, "attested": attested,
-        "signed": {"standard": "nep413", "message": message, "nonce": req.intent.nonce, "recipient": INTENTS_RECIPIENT,
+        "salt_checked": cfg.salt.is_some(),
+        // The shape the Verifier's execute_intents expects.
+        "signed": {"standard": "nep413",
+                   "payload": {"recipient": INTENTS_RECIPIENT, "nonce": req.intent.nonce, "message": message},
                    "public_key": signer.public_key_string(), "signature": sig_str},
     }))
 }
@@ -135,7 +150,7 @@ mod tests {
     }
 
     fn setup() -> (Config, nep413::Signer) {
-        (Config { account_id: "agent.testnet".into() }, nep413::Signer::from_seed([5u8; 32]))
+        (Config { account_id: "agent.testnet".into(), salt: None }, nep413::Signer::from_seed([5u8; 32]))
     }
 
     fn req(i: Intent, decision_id: Option<&str>) -> SignRequest {
@@ -149,7 +164,7 @@ mod tests {
         let out = handle(&cfg, &g, &s, req(intent("acme.testnet"), None)).unwrap();
         assert_eq!(out["decision"], "ALLOW");
         let signed = &out["signed"];
-        let msg = signed["message"].as_str().unwrap();
+        let msg = signed["payload"]["message"].as_str().unwrap();
         let m: Value = serde_json::from_str(msg).unwrap();
         assert_eq!(m["signer_id"], "agent.testnet");
         assert_eq!(m["deadline"], "2027-01-15T08:00:00Z");
@@ -193,6 +208,21 @@ mod tests {
     }
 
     #[test]
+    fn nonce_must_carry_the_verifier_salt() {
+        let s = nep413::Signer::from_seed([5u8; 32]);
+        let cfg = Config { account_id: "agent.testnet".into(), salt: Some([1, 2, 3, 4]) };
+        // A generated nonce starts with the salt.
+        let mut empty = intent("acme.testnet");
+        empty.nonce = String::new();
+        let out = handle(&cfg, &fake("ALLOW", true, empty.clone()), &s, req(empty, None)).unwrap();
+        let n = B64.decode(out["signed"]["payload"]["nonce"].as_str().unwrap()).unwrap();
+        assert_eq!(&n[..4], &[1, 2, 3, 4]);
+        assert_eq!(out["salt_checked"], true);
+        // A caller-supplied nonce with the wrong prefix is refused (the test intent uses 0x09 bytes).
+        assert!(handle(&cfg, &fake("ALLOW", true, intent("acme.testnet")), &s, req(intent("acme.testnet"), None)).is_err());
+    }
+
+    #[test]
     fn malformed_nonce_is_refused_and_empty_nonce_is_generated() {
         let (cfg, s) = setup();
         let mut bad = intent("acme.testnet");
@@ -202,6 +232,6 @@ mod tests {
         let mut empty = intent("acme.testnet");
         empty.nonce = String::new();
         let out = handle(&cfg, &fake("ALLOW", true, empty.clone()), &s, req(empty, None)).unwrap();
-        assert_eq!(B64.decode(out["signed"]["nonce"].as_str().unwrap()).unwrap().len(), 32);
+        assert_eq!(B64.decode(out["signed"]["payload"]["nonce"].as_str().unwrap()).unwrap().len(), 32);
     }
 }
