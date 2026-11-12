@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Shikhyy/lineage/internal/agent"
+	"github.com/Shikhyy/lineage/internal/audit"
 	"github.com/Shikhyy/lineage/internal/executor"
 	"github.com/Shikhyy/lineage/internal/guard"
 	"github.com/Shikhyy/lineage/internal/prov"
@@ -342,6 +343,9 @@ func (s *Server) apiAudit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		apiErr(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if recs == nil {
+		recs = []audit.Record{} // an empty log must be [], never null
 	}
 	writeJSON(w, http.StatusOK, recs)
 }

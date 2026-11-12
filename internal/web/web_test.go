@@ -250,6 +250,23 @@ func TestAppAPIFlow(t *testing.T) {
 	}
 }
 
+// A fresh database has no runs and no audit records. Both lists must serialize as [] (a null here
+// crashed the website's demo page).
+func TestEmptyListsAreArraysNotNull(t *testing.T) {
+	ts, _ := newServer(t)
+	for _, path := range []string{"/api/runs", "/v1/audit"} {
+		resp, err := http.Get(ts.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if got := strings.TrimSpace(string(raw)); got != "[]" {
+			t.Fatalf("%s on an empty database returned %q, want []", path, got)
+		}
+	}
+}
+
 func TestLimiter(t *testing.T) {
 	var l limiter
 	for i := 0; i < 3; i++ {

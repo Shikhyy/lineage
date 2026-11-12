@@ -10,6 +10,7 @@ import (
 
 	"github.com/Shikhyy/lineage/internal/agent"
 	"github.com/Shikhyy/lineage/internal/guard"
+	"github.com/Shikhyy/lineage/internal/records"
 	"github.com/Shikhyy/lineage/internal/scenario"
 )
 
@@ -254,6 +255,9 @@ func (s *Server) apiRuns(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		apiErr(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if runs == nil {
+		runs = []records.Run{} // an empty list must be [], never null
 	}
 	writeJSON(w, http.StatusOK, runs)
 }
