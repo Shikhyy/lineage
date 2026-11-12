@@ -1,0 +1,13 @@
+:root {
+  --cream: #F2E5C8; --paper: #FAF3E0; --card: #EBDCB8; --ink: #130B07; --text: #3a281c;
+  --rust: #591709; --copper: #985A36; --taupe: #8E826C; --sand: #BCAE9A; --olive: #625542;
+  --bad: #A3271A; --good: #2F5D3A; --warn: #B7791F; --line: #D6C6A0;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", Inter, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --pad: clamp(16px, 4vw, 56px);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+body { margin: 0; background: var(--cream); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

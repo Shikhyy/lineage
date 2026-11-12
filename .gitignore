@@ -23,3 +23,7 @@ AGENTS.md
 
 # raw benchmark rows (regenerate with make bench)
 results/latest.json
+
+# Next.js app
+web/node_modules
+web/.next
