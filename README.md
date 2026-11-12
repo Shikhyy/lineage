@@ -48,10 +48,10 @@ The landing page at `/` has an **attack lab**: write any message an attacker mig
 
 ### Try the demo
 
-1. Open http://localhost:3000/demo, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
+1. Open http://localhost:3000/console, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
 2. Run the same scenario with defense **lineage**. The decision is `ASK_OWNER`, nothing is paid, and the timeline shows the attacker's address came from an untrusted inbound email.
-3. Open `/approvals`, sign in with the owner secret (`OWNER_SECRET`), and approve or reject. Approval pays through the executor and updates the vendor master.
-4. Open `/audit` to see the hash-chained log verify.
+3. Open **Approvals** in the console's top bar, sign in with the owner secret (`OWNER_SECRET`), and approve or reject. Approval pays through the executor and updates the vendor master.
+4. Open **Audit** in the top bar to see the hash-chained log verify. Use **Compare** to run the same attack with no guard and behind Lineage side by side.
 
 ## How it works
 
