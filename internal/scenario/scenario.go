@@ -159,6 +159,36 @@ type Outcome struct {
 	RunID         string          `json:"run_id"`
 	Error         string          `json:"error,omitempty"`
 	Raw           json.RawMessage `json:"-"`
+
+	// Trace is each guard decision with its reasons and the lineage of the payee.
+	Trace []DecisionTrace `json:"trace,omitempty"`
+}
+
+// TraceOrigin is one source a value was found in, with a snippet of the text.
+type TraceOrigin struct {
+	ID      string `json:"id"`
+	Kind    string `json:"kind"`
+	Trust   string `json:"trust"`
+	Label   string `json:"label"`
+	Snippet string `json:"snippet"`
+}
+
+// TraceLineage is the provenance of one critical field.
+type TraceLineage struct {
+	Field    string        `json:"field"`
+	Value    string        `json:"value"`
+	Grounded bool          `json:"grounded"`
+	Source   string        `json:"source"`
+	Origins  []TraceOrigin `json:"origins,omitempty"`
+}
+
+// DecisionTrace is a decision in a form the website can show.
+type DecisionTrace struct {
+	Verdict string         `json:"verdict"`
+	Payee   string         `json:"payee"`
+	Cents   int64          `json:"amount_cents"`
+	Reasons []guard.Reason `json:"reasons"`
+	Lineage []TraceLineage `json:"lineage"`
 }
 
 // Skipped reports whether the scenario does not apply to the mode.
@@ -212,6 +242,7 @@ func Run(ctx context.Context, sc Scenario, ad Addresses, llm agent.LLM, mode age
 	if res.RunID != "" {
 		ds, _ := rec.RunDecisions(res.RunID)
 		for _, d := range ds {
+			out.Trace = append(out.Trace, buildTrace(rec, d))
 			switch guard.Verdict(d.Decision) {
 			case guard.AskOwner:
 				out.Asks++
@@ -239,6 +270,37 @@ func Run(ctx context.Context, sc Scenario, ad Addresses, llm agent.LLM, mode age
 	// so they are already included above.
 	classify(&out, sc)
 	return out, nil
+}
+
+func snip(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if len(s) > 180 {
+		s = s[:180] + "…"
+	}
+	return s
+}
+
+// buildTrace turns a stored decision into a displayable trace.
+func buildTrace(rec *records.Store, d records.Decision) DecisionTrace {
+	t := DecisionTrace{Verdict: d.Decision, Reasons: []guard.Reason{}, Lineage: []TraceLineage{}}
+	var args guard.PayArgs
+	_ = json.Unmarshal([]byte(d.ArgsJSON), &args)
+	t.Payee, t.Cents = args.Payee, args.AmountCents
+	_ = json.Unmarshal([]byte(d.ReasonsJSON), &t.Reasons)
+	var entries []guard.LineageEntry
+	_ = json.Unmarshal([]byte(d.LineageJSON), &entries)
+	for _, e := range entries {
+		tl := TraceLineage{Field: e.Field, Value: e.Value, Grounded: e.Grounded, Source: e.Source}
+		for _, o := range e.Origins {
+			to := TraceOrigin{ID: o.FragmentID, Kind: string(o.Kind), Trust: o.Trust.String(), Label: o.Trust.Label()}
+			if fs, _ := rec.Fragments([]string{o.FragmentID}); len(fs) == 1 {
+				to.Snippet = snip(fs[0].Content)
+			}
+			tl.Origins = append(tl.Origins, to)
+		}
+		t.Lineage = append(t.Lineage, tl)
+	}
+	return t
 }
 
 func classify(o *Outcome, sc Scenario) {

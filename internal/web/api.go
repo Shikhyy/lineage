@@ -3,16 +3,23 @@ package web
 import (
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/Shikhyy/lineage/internal/agent"
 	"github.com/Shikhyy/lineage/internal/executor"
 	"github.com/Shikhyy/lineage/internal/guard"
 	"github.com/Shikhyy/lineage/internal/prov"
 	"github.com/Shikhyy/lineage/internal/records"
+	"github.com/Shikhyy/lineage/internal/scenario"
 )
 
 func (s *Server) apiRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/attack", s.apiAttack)
 	mux.HandleFunc("POST /v1/fragments", s.apiFragment)
 	mux.HandleFunc("POST /v1/decide", s.apiDecide)
 	mux.HandleFunc("POST /v1/execute", s.apiExecute)
@@ -221,6 +228,112 @@ func (s *Server) apiResolve(status string) http.HandlerFunc {
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"approval_id": id, "status": status})
 	}
+}
+
+// limiter is a small per-client sliding-window rate limiter for the public attack lab.
+type limiter struct {
+	mu   sync.Mutex
+	hits map[string][]time.Time
+}
+
+func (l *limiter) allow(key string, max int, per time.Duration) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.hits == nil {
+		l.hits = map[string][]time.Time{}
+	}
+	now := time.Now()
+	kept := l.hits[key][:0]
+	for _, t := range l.hits[key] {
+		if now.Sub(t) < per {
+			kept = append(kept, t)
+		}
+	}
+	if len(kept) >= max {
+		l.hits[key] = kept
+		return false
+	}
+	l.hits[key] = append(kept, now)
+	return true
+}
+
+func clientIP(r *http.Request) string {
+	if f := r.Header.Get("X-Forwarded-For"); f != "" {
+		return strings.TrimSpace(strings.Split(f, ",")[0])
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+type labSide struct {
+	Defense  string                   `json:"defense"`
+	Paid     []scenario.Payout        `json:"paid"`
+	Trace    []scenario.DecisionTrace `json:"trace"`
+	Diverted bool                     `json:"diverted"` // money went somewhere other than the vendor record, or the amount changed
+	Pending  int                      `json:"pending_owner"`
+	Blocked  int                      `json:"blocked"`
+}
+
+// POST /api/attack runs a visitor-written message through the simulated
+// compromised agent twice: with no guard, and behind Lineage. Everything is in
+// memory with the simulated rail, so no money moves.
+func (s *Server) apiAttack(w http.ResponseWriter, r *http.Request) {
+	if !s.lim.allow(clientIP(r), 20, time.Minute) {
+		apiErr(w, http.StatusTooManyRequests, "slow down: at most 20 attacks a minute")
+		return
+	}
+	var in struct {
+		Message string `json:"message"`
+		Channel string `json:"channel"`
+		From    string `json:"from"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	msg, from := strings.TrimSpace(in.Message), strings.TrimSpace(in.From)
+	if msg == "" || len(msg) > 1500 {
+		apiErr(w, http.StatusBadRequest, "message must be 1 to 1500 characters")
+		return
+	}
+	if from == "" {
+		from = "billing@acme-supp1ies.com"
+	}
+	if len(from) > 120 {
+		apiErr(w, http.StatusBadRequest, "sender must be at most 120 characters")
+		return
+	}
+	kind := prov.KindEmail
+	switch in.Channel {
+	case "chat":
+		kind = prov.KindChat
+	case "tool":
+		kind = prov.KindTool
+	}
+	sc := scenario.Scenario{ID: "attack-lab", Class: "LAB", Kind: "attack",
+		Inbox: []agent.Email{{From: from, Subject: "Invoice inv_1", Body: msg, Kind: kind}}}
+
+	var sides []labSide
+	for _, def := range []agent.Defense{agent.DefNone, agent.DefLineage} {
+		o, err := scenario.Run(r.Context(), sc, s.Addr, agent.CompromisedLLM{}, agent.ModeCompromised, def, executor.SimRail{}, s.Guard)
+		if err != nil {
+			apiErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		side := labSide{Defense: string(def), Paid: o.Paid, Trace: o.Trace, Pending: o.Asks, Blocked: o.Blocks}
+		if side.Paid == nil {
+			side.Paid = []scenario.Payout{}
+		}
+		for _, p := range o.Paid {
+			if prov.Normalize(p.Payee) != prov.Normalize(s.Addr.VendorA) || p.AmountCents != 125000 {
+				side.Diverted = true
+			}
+		}
+		sides = append(sides, side)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"vendor": s.Addr.VendorA, "invoice_cents": 125000, "results": sides})
 }
 
 func (s *Server) apiAudit(w http.ResponseWriter, r *http.Request) {

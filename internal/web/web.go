@@ -43,6 +43,7 @@ type Server struct {
 	ResultsPath string // results/latest.md
 
 	tpl *template.Template
+	lim limiter
 }
 
 // Page is the data passed to every template.
