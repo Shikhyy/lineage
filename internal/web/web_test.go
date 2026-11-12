@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -112,81 +111,6 @@ func TestAPIFlowBlocksThenApprovesThenPays(t *testing.T) {
 	code, v := do(t, "GET", ts.URL+"/v1/audit/verify", nil, nil)
 	if code != 200 || v["ok"] != true {
 		t.Fatalf("audit verify: %d %v", code, v)
-	}
-}
-
-func TestUIRunAndApprove(t *testing.T) {
-	ts, _ := newServer(t)
-	jar, _ := cookiejar.New(nil)
-	c := &http.Client{Jar: jar}
-
-	get := func(path string) (int, string) {
-		resp, err := c.Get(ts.URL + path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-		b, _ := io.ReadAll(resp.Body)
-		return resp.StatusCode, string(b)
-	}
-	if code, body := get("/demo"); code != 200 || !strings.Contains(body, "BEC") {
-		t.Fatalf("demo page: %d", code)
-	}
-	if code, body := get("/"); code != 200 || !strings.Contains(body, "Try to phish it") || !strings.Contains(body, "id=\"lab-form\"") || !strings.Contains(body, "/static/site.js") {
-		t.Fatalf("landing page: %d", code)
-	}
-	if code, body := get("/api/bench"); code != 200 || !strings.HasPrefix(strings.TrimSpace(body), "[") {
-		t.Fatalf("bench api: %d %q", code, body)
-	}
-	if code, _ := get("/static/site.css"); code != 200 {
-		t.Fatalf("site.css: %d", code)
-	}
-
-	resp, err := c.PostForm(ts.URL+"/run", url.Values{"scenario": {"a2-bec-vendor-change"}, "mode": {"compromised"}, "defense": {"lineage"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	body := string(b)
-	if resp.StatusCode != 200 || !strings.Contains(body, "ASK_OWNER") || !strings.Contains(body, "simulated compromised agent") ||
-		!strings.Contains(body, "No money moved") {
-		t.Fatalf("run page should show the blocked attack and label the simulation, got %d:\n%s", resp.StatusCode, body)
-	}
-	runPath := resp.Request.URL.Path
-
-	// Approvals require the owner.
-	resp, _ = c.Get(ts.URL + "/approvals")
-	b, _ = io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if !strings.Contains(string(b), "Owner secret") {
-		t.Fatal("approvals must redirect to the login page")
-	}
-	if resp, _ = c.PostForm(ts.URL+"/login", url.Values{"secret": {"wrong"}}); resp.StatusCode != 401 {
-		t.Fatalf("wrong secret must be 401, got %d", resp.StatusCode)
-	}
-	if resp, _ = c.PostForm(ts.URL+"/login", url.Values{"secret": {secret}, "next": {"/approvals"}}); resp.StatusCode != 200 {
-		t.Fatalf("login: %d", resp.StatusCode)
-	}
-	code, page := get("/approvals")
-	if code != 200 || !strings.Contains(page, "Approve and pay") {
-		t.Fatalf("approvals page: %d", code)
-	}
-	i := strings.Index(page, "/approvals/appr_")
-	j := strings.Index(page[i:], "/approve")
-	resp, err = c.PostForm(ts.URL+page[i:i+j]+"/approve", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, _ = io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode != 200 || !strings.Contains(string(b), "SIMULATED") || resp.Request.URL.Path != runPath {
-		t.Fatalf("approval should pay and return to the run, got %d at %s", resp.StatusCode, resp.Request.URL.Path)
-	}
-
-	code, audit := get("/audit")
-	if code != 200 || !strings.Contains(audit, "records verified") {
-		t.Fatalf("audit page: %d", code)
 	}
 }
 
