@@ -162,12 +162,21 @@ type payoutView struct {
 
 // summarize states plainly what happened to the money in a run.
 func summarize(payouts []payoutView, decs []decisionView) (string, string) {
-	if len(payouts) > 0 {
-		var parts []string
-		for _, p := range payouts {
-			parts = append(parts, fmt.Sprintf("$%d.%02d to %s", p.Cents/100, p.Cents%100, p.Payee))
+	// A payout the rail rejected sent nothing, so it must never be reported as money moved.
+	var sent, failed []string
+	for _, p := range payouts {
+		line := fmt.Sprintf("$%d.%02d to %s", p.Cents/100, p.Cents%100, p.Payee)
+		if p.Status == "failed" {
+			failed = append(failed, line)
+		} else {
+			sent = append(sent, line)
 		}
-		return "Money moved: " + strings.Join(parts, "; ") + ".", "moved"
+	}
+	if len(sent) > 0 {
+		return "Money moved: " + strings.Join(sent, "; ") + ".", "moved"
+	}
+	if len(failed) > 0 {
+		return "No money moved. The payment rail rejected the payout (" + strings.Join(failed, "; ") + "), so nothing was sent.", "failed"
 	}
 	pending, blocked := 0, 0
 	for _, d := range decs {

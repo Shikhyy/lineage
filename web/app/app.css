@@ -37,6 +37,7 @@ code.wrap { word-break: break-all; }
 .outcome { border-radius: 14px; padding: 14px 18px; margin: 14px 0; font: 400 clamp(20px, 2.4vw, 28px)/1.2 var(--serif); letter-spacing: -.01em; border: 1px solid; }
 .outcome.safe { background: #DCEBD6; color: var(--good); border-color: #B6D2AE; }
 .outcome.moved { background: #F6D9D0; color: var(--bad); border-color: #E2A898; }
+.outcome.failed { background: #F6E4B5; color: #8a5d12; border-color: #E3CB8E; }
 
 .timeline { list-style: none; padding: 0; margin: 0; }
 .step { display: grid; grid-template-columns: 110px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }

@@ -188,7 +188,7 @@ export interface RunDetail {
   run: Run;
   rail: string;
   outcome: string;
-  outcome_class: "safe" | "moved";
+  outcome_class: "safe" | "moved" | "failed";
   steps: Step[] | null;
   payouts: Payout[] | null;
 }

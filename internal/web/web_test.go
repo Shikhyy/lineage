@@ -267,6 +267,26 @@ func TestEmptyListsAreArraysNotNull(t *testing.T) {
 	}
 }
 
+// A payout the rail rejected sent nothing. The outcome must not claim money moved (a real PayPal
+// PAYOUT_NOT_AVAILABLE rejection once showed "Money moved" on the run page).
+func TestSummarizeNeverCountsFailedPayouts(t *testing.T) {
+	failed := payoutView{Payee: "v@x.test", Cents: 125000, Rail: "paypal", Status: "failed"}
+	ok := payoutView{Payee: "v@x.test", Cents: 125000, Rail: "paypal", Status: "SUCCESS"}
+
+	if text, class := summarize([]payoutView{failed}, nil); class != "failed" || strings.Contains(text, "Money moved") {
+		t.Fatalf("a failed payout must not read as money moved: %q (%s)", text, class)
+	}
+	if text, class := summarize([]payoutView{ok}, nil); class != "moved" || !strings.Contains(text, "Money moved: $1250.00 to v@x.test") {
+		t.Fatalf("a successful payout is money moved: %q (%s)", text, class)
+	}
+	if _, class := summarize([]payoutView{failed, ok}, nil); class != "moved" {
+		t.Fatalf("one success among failures still moved money, got %s", class)
+	}
+	if _, class := summarize(nil, nil); class != "safe" {
+		t.Fatalf("no payouts is safe, got %s", class)
+	}
+}
+
 func TestLimiter(t *testing.T) {
 	var l limiter
 	for i := 0; i < 3; i++ {
