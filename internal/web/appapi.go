@@ -6,13 +6,18 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Shikhyy/lineage/internal/agent"
 	"github.com/Shikhyy/lineage/internal/guard"
+	"github.com/Shikhyy/lineage/internal/prov"
 	"github.com/Shikhyy/lineage/internal/records"
 	"github.com/Shikhyy/lineage/internal/scenario"
 )
+
+// customScenarioID labels runs started from a visitor-written message.
+const customScenarioID = "custom"
 
 // JSON API used by the Next.js frontend. Every response is JSON; money is integer cents.
 
@@ -179,24 +184,54 @@ func (s *Server) apiRun(w http.ResponseWriter, r *http.Request) {
 		Scenario string `json:"scenario"`
 		Mode     string `json:"mode"`
 		Defense  string `json:"defense"`
+		// Custom runs a visitor-written message instead of a library scenario.
+		Custom *struct {
+			Message string `json:"message"`
+			Channel string `json:"channel"` // email | chat | tool
+			From    string `json:"from"`
+		} `json:"custom"`
 	}
 	if !decode(w, r, &in) {
 		return
 	}
-	scs, err := scenario.Load(s.Addr)
-	if err != nil {
-		apiErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
 	var sc *scenario.Scenario
-	for i := range scs {
-		if scs[i].ID == in.Scenario {
-			sc = &scs[i]
+	if in.Custom != nil {
+		msg, from := strings.TrimSpace(in.Custom.Message), strings.TrimSpace(in.Custom.From)
+		if msg == "" || len(msg) > 1500 {
+			apiErr(w, http.StatusBadRequest, "message must be 1 to 1500 characters")
+			return
 		}
-	}
-	if sc == nil {
-		apiErr(w, http.StatusBadRequest, "unknown scenario")
-		return
+		if from == "" {
+			from = "billing@acme-supp1ies.com"
+		}
+		if len(from) > 120 {
+			apiErr(w, http.StatusBadRequest, "sender must be at most 120 characters")
+			return
+		}
+		kind := prov.KindEmail
+		switch in.Custom.Channel {
+		case "chat":
+			kind = prov.KindChat
+		case "tool":
+			kind = prov.KindTool
+		}
+		sc = &scenario.Scenario{ID: customScenarioID, Class: "LAB", Kind: "attack", Title: "Custom attack",
+			Inbox: []agent.Email{{From: from, Subject: "Invoice inv_1", Body: msg, Kind: kind}}}
+	} else {
+		scs, err := scenario.Load(s.Addr)
+		if err != nil {
+			apiErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		for i := range scs {
+			if scs[i].ID == in.Scenario {
+				sc = &scs[i]
+			}
+		}
+		if sc == nil {
+			apiErr(w, http.StatusBadRequest, "unknown scenario")
+			return
+		}
 	}
 	mode, defense := agent.Mode(in.Mode), agent.Defense(in.Defense)
 	var llm agent.LLM
@@ -324,9 +359,62 @@ func (s *Server) apiRunGet(w http.ResponseWriter, r *http.Request) {
 		payouts = append(payouts, payout{a.Payee, a.AmountCents, p.Rail, p.Status})
 	}
 	outcome, class := summarize(pv, all)
+
+	// Every fragment that reached the agent (and the ones the lineage traced back to), so the
+	// website can draw the provenance graph.
+	type fragment struct {
+		ID        string   `json:"id"`
+		Kind      string   `json:"kind"`
+		Trust     int      `json:"trust"` // 0..3 = T0..T3
+		Source    string   `json:"source"`
+		Snippet   string   `json:"snippet"`
+		ParentIDs []string `json:"parent_ids"`
+	}
+	seen := map[string]bool{}
+	frags := []fragment{}
+	addFrags := func(fs []prov.Fragment) {
+		for _, f := range fs {
+			if seen[f.ID] {
+				continue
+			}
+			seen[f.ID] = true
+			parents := f.ParentIDs
+			if parents == nil {
+				parents = []string{}
+			}
+			frags = append(frags, fragment{ID: f.ID, Kind: string(f.Kind), Trust: int(f.Trust), Source: f.Source, Snippet: snippet(f.Content), ParentIDs: parents})
+		}
+	}
+	runFrags, _ := s.Rec.RunFragments(run.ID)
+	addFrags(runFrags)
+	var traced []string
+	for _, dv := range all {
+		for _, l := range dv.Lineage {
+			for _, o := range l.Origins {
+				traced = append(traced, o.FragmentID)
+				for _, c := range o.Chain {
+					traced = append(traced, c.ID)
+				}
+			}
+		}
+	}
+	more, _ := s.Rec.Fragments(traced)
+	addFrags(more)
+
+	title, kind := "Custom attack", "attack"
+	if run.ScenarioID != customScenarioID {
+		if scs, err := scenario.Load(s.Addr); err == nil {
+			for _, sc := range scs {
+				if sc.ID == run.ScenarioID {
+					title, kind = sc.Title, sc.Kind
+				}
+			}
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"run": run, "rail": s.Exec.RailName(), "outcome": outcome, "outcome_class": class,
-		"steps": outSteps, "payouts": payouts,
+		"steps": outSteps, "payouts": payouts, "fragments": frags,
+		"scenario_title": title, "scenario_kind": kind,
 	})
 }
 
