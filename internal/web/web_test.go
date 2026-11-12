@@ -132,7 +132,7 @@ func TestUIRunAndApprove(t *testing.T) {
 	if code, body := get("/demo"); code != 200 || !strings.Contains(body, "BEC") {
 		t.Fatalf("demo page: %d", code)
 	}
-	if code, body := get("/"); code != 200 || !strings.Contains(body, "can’t be phished") || !strings.Contains(body, "/static/site.js") {
+	if code, body := get("/"); code != 200 || !strings.Contains(body, "Try to phish it") || !strings.Contains(body, "id=\"lab-form\"") || !strings.Contains(body, "/static/site.js") {
 		t.Fatalf("landing page: %d", code)
 	}
 	if code, body := get("/api/bench"); code != 200 || !strings.HasPrefix(strings.TrimSpace(body), "[") {

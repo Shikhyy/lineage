@@ -4,153 +4,244 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lineage · The payment agent that can't be phished</title>
-<meta name="description" content="Lineage traces where every payment detail came from, and blocks values from untrusted sources before money moves. Enforced outside the model.">
-<meta name="theme-color" content="#07090c">
+<meta name="description" content="Lineage traces where every payment detail came from and holds values from untrusted sources before money moves. Try to phish it.">
+<meta name="theme-color" content="#F2E5C8">
 <link rel="stylesheet" href="/static/site.css">
 <script src="/static/site.js" defer></script>
 </head>
 <body>
-<div class="glow" aria-hidden="true"></div>
 
 <header class="nav" id="nav">
   <a class="wordmark" href="/" aria-label="Lineage home">
-    <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true"><path d="M3 5 C12 5 12 14 25 14 M3 14 H25 M3 23 C12 23 12 14 25 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="14" r="2.6" fill="var(--lime)"/></svg>
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#591709"/><path d="M8 9 C14 9 14 16 24 16 M8 16 H24 M8 23 C14 23 14 16 24 16" fill="none" stroke="#F2E5C8" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="16" r="2.4" fill="#F2E5C8"/></svg>
     <span>Lineage</span>
   </a>
-  <nav>
+  <nav class="pills" aria-label="Sections">
+    <a class="on" href="#top">Home</a>
     <a href="#how">How it works</a>
-    <a href="#replay">The attack</a>
+    <a href="#lab">Attack lab</a>
     <a href="#benchmark">Benchmark</a>
     <a href="#rails">Rails</a>
-    <a class="pill" href="/demo">Run the demo <span aria-hidden="true">→</span></a>
   </nav>
+  <a class="dark-btn" href="/demo">Run the demo</a>
 </header>
 
-<main>
-<section class="hero">
-  <p class="eyebrow reveal">Provenance-gated payments for AI agents</p>
-  <h1 class="reveal d1">The agent that pays your invoices <em>can’t be phished.</em></h1>
-  <p class="lede reveal d2">Every payee, address and amount is traced back to where it came from. Text from the outside world can never change where money goes, and that rule is enforced <strong>outside the model</strong>, so even a fully jailbroken agent can’t pay an attacker.</p>
-  <div class="cta reveal d3">
-    <a class="btn primary" href="/demo">Run the attack <span aria-hidden="true">→</span></a>
-    <a class="btn ghost" href="#benchmark">See the benchmark</a>
-  </div>
+<main id="top">
+<section class="hero-wrap">
+  <div class="hero">
+    <pre class="code left" aria-hidden="true">{"fragment":"frag_9c2e","kind":"email",
+ "trust":"T0","source":"billing@acme-supp1ies.com",
+ "sha256":"3f1a9be0…"}
+decide(pay_vendor) →
+  payee  attacker@sandbox.test
+  vendor vendor-a@sandbox.test
+  trace  only in T0 sources
+  ⇒ ASK_OWNER UNTRUSTED_PAYEE_CHANGE
+{"audit":{"seq":14,"prev":"a91f…",
+ "hash":"77c2…"}}
+C2 amount ≤ approved PO  ✓
+C2 invoice vendor = PO vendor ✓
+C3 payee grounded in T2  ✗</pre>
+    <pre class="code right" aria-hidden="true">memory.recall("payout")
+→ "Acme payout email: …"
+  trust T0 (written from a stranger
+  chat), parent frag_41d0
+tool.lookup_vendor →
+  vendor record T2 ✓
+  injected text T0 ✗
+nonce  reused?  no
+deadline ttl    ≤ 300s ✓
+asset  allowlisted ✓
+guard 0.2 ms · outside the LLM</pre>
 
-  <figure class="graph reveal d3" aria-label="Untrusted sources are stopped at the guard; the vendor record passes">
-    <svg viewBox="0 0 1100 420" role="img">
+    <div class="hero-in">
+      <p class="chip reveal"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1l2 4.5 4.8.5-3.6 3.2 1 4.8L8 11.6 3.8 14l1-4.8L1.2 6l4.8-.5z" fill="currentColor"/></svg> Provenance-gated payments for AI agents</p>
+      <h1 class="reveal d1">Move beyond blind trust. Pay only what has <em>provenance.</em></h1>
+      <p class="lede reveal d2">Lineage traces where every payee, address and amount came from, and holds anything that originated in an untrusted email, chat or memory. The rule runs <strong>outside the model</strong>, so even a jailbroken agent can’t pay an attacker.</p>
+      <div class="cta reveal d3">
+        <a class="dark-btn big" href="#lab">Try to phish it <span aria-hidden="true">▸</span></a>
+        <a class="ghost-btn" href="#benchmark">See the benchmark</a>
+      </div>
+    </div>
+
+    <svg class="art" viewBox="0 0 1000 400" role="img" aria-label="Three sealed letters on a desk: one stamped untrusted, one carrying a wax seal, one stamped verified">
       <defs>
-        <linearGradient id="gRed" x1="0" x2="1"><stop offset="0" stop-color="#ff5d5d" stop-opacity=".0"/><stop offset="1" stop-color="#ff5d5d" stop-opacity=".9"/></linearGradient>
-        <linearGradient id="gGreen" x1="0" x2="1"><stop offset="0" stop-color="#b6ff5c" stop-opacity=".0"/><stop offset="1" stop-color="#b6ff5c" stop-opacity=".9"/></linearGradient>
-        <path id="p1" d="M310 70  C 450 70 480 190 560 205"/>
-        <path id="p2" d="M310 150 C 440 150 480 200 560 208"/>
-        <path id="p3" d="M310 230 C 440 230 480 215 560 211"/>
-        <path id="p4" d="M310 310 C 440 310 480 225 560 214"/>
-        <path id="p5" d="M310 380 C 460 380 480 300 560 230"/>
-        <path id="out" d="M600 210 C 700 210 760 210 850 210"/>
+        <radialGradient id="wax" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#d2483a"/><stop offset=".55" stop-color="#9c1f17"/><stop offset="1" stop-color="#5e0f0b"/></radialGradient>
+        <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#fbf1d8"/><stop offset="1" stop-color="#e9d6ac"/></linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#2b0a03" flood-opacity=".45"/></filter>
       </defs>
 
-      <g class="src" font-family="ui-monospace,Menlo,monospace" font-size="15">
-        <g transform="translate(40,50)"><rect width="270" height="40" rx="8"/><circle class="t0" cx="20" cy="20" r="5"/><text x="36" y="25">inbound email</text><text class="tier" x="232" y="25">T0</text></g>
-        <g transform="translate(40,130)"><rect width="270" height="40" rx="8"/><circle class="t0" cx="20" cy="20" r="5"/><text x="36" y="25">stranger chat</text><text class="tier" x="232" y="25">T0</text></g>
-        <g transform="translate(40,210)"><rect width="270" height="40" rx="8"/><circle class="t0" cx="20" cy="20" r="5"/><text x="36" y="25">poisoned memory</text><text class="tier" x="232" y="25">T0</text></g>
-        <g transform="translate(40,290)"><rect width="270" height="40" rx="8"/><circle class="t0" cx="20" cy="20" r="5"/><text x="36" y="25">tool output</text><text class="tier" x="232" y="25">T0</text></g>
-        <g transform="translate(40,360)"><rect class="ok" width="270" height="40" rx="8"/><circle class="t2" cx="20" cy="20" r="5"/><text x="36" y="25">vendor record</text><text class="tier" x="232" y="25">T2</text></g>
+      <g class="threads" fill="none" stroke="#F2E5C8" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="3 6">
+        <path d="M262 214 C 330 120 420 120 470 188"/>
+        <path d="M738 214 C 670 120 580 120 530 188"/>
       </g>
 
-      <g fill="none" stroke-width="1.6">
-        <use href="#p1" stroke="url(#gRed)"/><use href="#p2" stroke="url(#gRed)"/><use href="#p3" stroke="url(#gRed)"/><use href="#p4" stroke="url(#gRed)"/>
-        <use href="#p5" stroke="url(#gGreen)"/><use href="#out" stroke="#b6ff5c" stroke-opacity=".7"/><path d="M590 252 C 620 292 690 300 712 330" stroke="#ffb547" stroke-opacity=".7" stroke-dasharray="5 6"/>
+      <g transform="translate(140,196) rotate(-9)" filter="url(#shadow)">
+        <rect width="250" height="190" rx="6" fill="url(#paper)"/>
+        <g stroke="#8E826C" stroke-opacity=".55" stroke-width="1.2">
+          <path d="M24 54H190M24 76H220M24 98H176M24 120H206M24 142H150"/>
+        </g>
+        <g transform="translate(120,20) rotate(6)"><rect width="104" height="30" rx="3" fill="none" stroke="#A3271A" stroke-width="2.4"/><text x="52" y="20" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12.5" font-weight="700" fill="#A3271A" letter-spacing="1">T0 UNTRUSTED</text></g>
+        <text x="24" y="172" font-family="Georgia,serif" font-style="italic" font-size="15" fill="#591709">We changed banks…</text>
       </g>
 
-      <g class="flow">
-        <circle r="4.5" fill="#ff5d5d"><animateMotion dur="3.6s" repeatCount="indefinite" begin="0s" keyPoints="0;1" keyTimes="0;1" calcMode="linear"><mpath href="#p1"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3.6s" repeatCount="indefinite" begin="0s"/></circle>
-        <circle r="4.5" fill="#ff5d5d"><animateMotion dur="3.6s" repeatCount="indefinite" begin=".9s"><mpath href="#p2"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3.6s" repeatCount="indefinite" begin=".9s"/></circle>
-        <circle r="4.5" fill="#ff5d5d"><animateMotion dur="3.6s" repeatCount="indefinite" begin="1.8s"><mpath href="#p3"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3.6s" repeatCount="indefinite" begin="1.8s"/></circle>
-        <circle r="4.5" fill="#ff5d5d"><animateMotion dur="3.6s" repeatCount="indefinite" begin="2.7s"><mpath href="#p4"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3.6s" repeatCount="indefinite" begin="2.7s"/></circle>
-        <circle r="5" fill="#b6ff5c"><animateMotion dur="3.2s" repeatCount="indefinite" begin=".4s"><mpath href="#p5"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.9;1" dur="3.2s" repeatCount="indefinite" begin=".4s"/></circle>
-        <circle r="5" fill="#b6ff5c"><animateMotion dur="1.6s" repeatCount="indefinite" begin="2.4s"><mpath href="#out"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.9;1" dur="1.6s" repeatCount="indefinite" begin="2.4s"/></circle>
+      <g transform="translate(375,160)" filter="url(#shadow)">
+        <rect width="250" height="215" rx="6" fill="url(#paper)"/>
+        <g stroke="#8E826C" stroke-opacity=".5" stroke-width="1.2"><path d="M26 40H224M26 62H200M26 84H224M26 106H178"/></g>
+        <path d="M0 0 L125 96 L250 0" fill="none" stroke="#BCAE9A" stroke-width="1.6"/>
+        <g transform="translate(125,98)">
+          <path d="M0 -50 C 18 -56 38 -48 46 -32 C 58 -22 56 0 48 12 C 54 30 38 48 18 50 C 4 60 -16 56 -26 46 C -46 44 -56 24 -50 6 C -60 -12 -46 -36 -26 -42 C -18 -50 -8 -52 0 -50Z" fill="url(#wax)"/>
+          <circle r="32" fill="none" stroke="#e8786b" stroke-opacity=".5" stroke-width="2"/>
+          <circle r="25" fill="none" stroke="#3d0805" stroke-opacity=".5" stroke-width="1.5"/>
+          <path d="M-14 -13 C -3 -13 -3 0 14 0 M-14 0 H14 M-14 13 C -3 13 -3 0 14 0" fill="none" stroke="#f3b0a6" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="14" cy="0" r="3.4" fill="#f3b0a6"/>
+        </g>
+        <text x="125" y="195" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#625542" letter-spacing="1.5">SEALED BY LINEAGE</text>
       </g>
 
-      <g class="gate" transform="translate(580,210)">
-        <circle class="ring r1" r="46"/><circle class="ring r2" r="46"/>
-        <circle class="core" r="34"/>
-        <text y="-2" text-anchor="middle" font-size="12" font-family="ui-monospace,Menlo,monospace" letter-spacing="2">GUARD</text>
-        <text y="14" text-anchor="middle" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="#8793a1">outside the LLM</text>
-      </g>
-
-      <g font-family="ui-monospace,Menlo,monospace" font-size="15" transform="translate(850,170)">
-        <rect class="out" width="210" height="80" rx="10"/>
-        <text x="18" y="32" fill="#b6ff5c">ALLOW</text><text x="18" y="56" fill="#8793a1" font-size="13">payee = vendor record</text>
-      </g>
-      <g font-family="ui-monospace,Menlo,monospace" font-size="13" transform="translate(600,330)">
-        <rect class="ask" width="250" height="56" rx="10"/>
-        <text x="16" y="24" fill="#ffb547" font-size="15">ASK_OWNER</text><text x="16" y="44" fill="#8793a1">anything from T0 stops here</text>
+      <g transform="translate(610,190) rotate(8)" filter="url(#shadow)">
+        <rect width="250" height="190" rx="6" fill="url(#paper)"/>
+        <g stroke="#8E826C" stroke-opacity=".55" stroke-width="1.2"><path d="M24 62H206M24 84H178M24 106H220M24 128H160"/></g>
+        <g transform="translate(24,20)"><rect width="156" height="30" rx="3" fill="none" stroke="#2F5D3A" stroke-width="2.4"/><text x="78" y="20" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12.5" font-weight="700" fill="#2F5D3A" letter-spacing="1">T2 VENDOR RECORD</text></g>
+        <path d="M184 150 l12 13 l26 -30" fill="none" stroke="#2F5D3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
       </g>
     </svg>
-    <figcaption>Red values from untrusted sources stop at the guard. The value that traces to a trusted record passes.</figcaption>
-  </figure>
+  </div>
 
   <dl class="stats reveal">
     <div><dt>Attack scenarios</dt><dd data-bind="attacks">12</dd></div>
-    <div><dt>Attacks that succeed with Lineage</dt><dd data-bind="lineage-asr">0%</dd><small>on this benchmark, simulated attacker</small></div>
-    <div><dt>Without any guard</dt><dd class="bad" data-bind="none-asr">100%</dd></div>
-    <div><dt>Guard decision time, p95</dt><dd data-bind="p95">&lt;1 ms</dd></div>
+    <div><dt>Succeed against Lineage</dt><dd class="good" data-bind="lineage-asr">0%</dd><small>this benchmark · simulated attacker</small></div>
+    <div><dt>Succeed with no guard</dt><dd class="bad" data-bind="none-asr">100%</dd></div>
+    <div><dt>Guard decision, p95</dt><dd data-bind="p95">&lt;1 ms</dd></div>
   </dl>
 </section>
 
-<div class="marquee" aria-hidden="true"><div class="track">
-  <span>Business email compromise</span><i></i><span>Memory poisoning</span><i></i><span>Confused deputy</span><i></i><span>Prompt injection in invoices</span><i></i><span>Authority impersonation</span><i></i><span>Amount inflation</span><i></i><span>Stale intents</span><i></i><span>Solver-message injection</span><i></i>
-  <span>Business email compromise</span><i></i><span>Memory poisoning</span><i></i><span>Confused deputy</span><i></i><span>Prompt injection in invoices</span><i></i><span>Authority impersonation</span><i></i><span>Amount inflation</span><i></i><span>Stale intents</span><i></i><span>Solver-message injection</span><i></i>
-</div></div>
-
-<section id="how" class="block">
-  <p class="eyebrow reveal">How it works</p>
-  <h2 class="reveal d1">Every value has a <em>birthplace.</em></h2>
-  <div class="steps">
-    <article class="step reveal"><span class="num">01</span><h3>Label at the door</h3><p>Every email, chat message, memory entry and tool result becomes a fragment with a trust tier assigned by <em>our code</em>. The model can never create or upgrade a label.</p></article>
-    <article class="step reveal d1"><span class="num">02</span><h3>Trace the value</h3><p>Before money moves, the payee is traced through the context. If it only appears in untrusted text, we know exactly which message put it there.</p></article>
-    <article class="step reveal d2"><span class="num">03</span><h3>Decide outside the model</h3><p>The guard answers <b>ALLOW</b>, <b>ASK_OWNER</b> or <b>BLOCK</b>, binds the amount to the approved PO, and writes a hash-chained audit record.</p></article>
-  </div>
-
-  <div class="tiers reveal">
-    <div class="tier t3"><b>T3</b><span>Owner</span><em>may set payment fields</em></div>
-    <div class="tier t2"><b>T2</b><span>Trusted records</span><em>may set payment fields</em></div>
-    <div class="tier t1"><b>T1</b><span>Known sender, spoofable</span><em>informational only</em></div>
-    <div class="tier t0"><b>T0</b><span>Everything else, including tainted memory</span><em>never sets payment fields</em></div>
-  </div>
+<section class="statement block" id="how">
+  <p class="eyebrow reveal">The idea</p>
+  <p class="big reveal d1">Every value has a <em>birthplace.</em> Lineage makes the agent show its papers before a single cent moves.</p>
 </section>
 
-<section id="replay" class="block">
-  <p class="eyebrow reveal">The attack, replayed</p>
-  <h2 class="reveal d1">One email. <em>Two outcomes.</em></h2>
-  <p class="sub reveal d2">Scenario A2: a lookalike domain claims the vendor’s payout details changed. The agent here is a <strong>simulated compromised agent</strong> that always follows the latest payment instruction it has seen.</p>
+<section class="features block">
+  <div class="features-head">
+    <h2 class="reveal">Everything you need to stop a <em>bad payment.</em></h2>
+    <p class="reveal d1">Guardrails that cap amounts and keep allowlists don’t ask the one question that matters: <strong>where did this payee come from, and is that source allowed to set it?</strong> Lineage does.</p>
+  </div>
 
-  <div class="replay reveal" id="replay-app">
-    <div class="toggle" role="tablist" aria-label="Defense">
-      <button role="tab" aria-selected="true" data-mode="none">No guard</button>
-      <button role="tab" aria-selected="false" data-mode="lineage">With Lineage</button>
-      <span class="thumb" aria-hidden="true"></span>
+  <article class="feat reveal">
+    <div class="feat-text">
+      <span class="ico"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 6h6M4 12h6M4 18h6M14 12h6M10 6c3 0 3 6 4 6M10 18c3 0 3-6 4-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      <p class="tag">PROVENANCE</p>
+      <h3>Label at the door, trace at the gate</h3>
+      <p>Every email, chat message, memory entry and tool result becomes a fragment with a trust tier assigned by <em>our code</em>. Before payment, the payee is traced back through the context to the exact message that put it there.</p>
+      <a class="dark-btn small" href="/demo">See a trace →</a>
     </div>
-    <div class="term" id="term" aria-live="polite"></div>
-    <div class="result" id="result"></div>
-    <button class="again" id="again" type="button">↻ Replay</button>
+    <div class="diagram">
+      <svg viewBox="0 0 420 250">
+        <g font-family="ui-monospace,Menlo,monospace" font-size="11">
+          <g><rect x="16" y="22" width="150" height="34" rx="17" class="dn bad"/><text x="32" y="43">email · T0</text></g>
+          <g><rect x="16" y="108" width="150" height="34" rx="17" class="dn bad"/><text x="32" y="129">memory · T0</text></g>
+          <g><rect x="16" y="194" width="150" height="34" rx="17" class="dn good"/><text x="32" y="215">vendor record · T2</text></g>
+          <path d="M166 39 C 240 39 230 112 262 118" class="ln bad"/><path d="M166 125 C 220 125 230 125 262 125" class="ln bad"/><path d="M166 211 C 240 211 230 140 262 132" class="ln good"/>
+          <g><rect x="262" y="96" width="140" height="58" rx="12" class="dn node"/><text x="276" y="120">payee</text><text x="276" y="138" fill="#8E826C">its origin?</text></g>
+        </g>
+      </svg>
+    </div>
+  </article>
+
+  <article class="feat reverse reveal">
+    <div class="feat-text">
+      <span class="ico"><svg viewBox="0 0 24 24" width="26" height="26"><rect x="3" y="4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="12" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 8h3a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      <p class="tag">BINDING</p>
+      <h3>Bound to records, not to the agent’s say-so</h3>
+      <p>The invoice, purchase order and vendor come from the database. The amount can’t exceed the approved PO, and a payee that belongs to <em>another</em> vendor is rejected, the confused-deputy case a plain allowlist waves through.</p>
+      <a class="dark-btn small" href="#benchmark">See the ablations →</a>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 420 250">
+        <g font-family="ui-monospace,Menlo,monospace" font-size="11">
+          <rect x="30" y="30" width="110" height="46" rx="10" class="dn node"/><text x="44" y="57">invoice</text>
+          <rect x="280" y="30" width="110" height="46" rx="10" class="dn node"/><text x="304" y="57">PO</text>
+          <rect x="155" y="170" width="110" height="46" rx="10" class="dn node"/><text x="176" y="197">vendor</text>
+          <path d="M140 53H280M85 76 C 90 130 120 170 155 190M335 76 C 330 130 300 170 265 190" class="ln good"/>
+          <g class="ck"><circle cx="210" cy="53" r="12"/><path d="M204 53l4 4 8-9"/></g>
+          <text x="150" y="104" fill="#625542">amount ≤ PO</text>
+          <text x="20" y="140" fill="#625542">vendor matches</text>
+          <text x="296" y="140" fill="#625542">payee is theirs</text>
+        </g>
+      </svg>
+    </div>
+  </article>
+
+  <article class="feat reveal">
+    <div class="feat-text">
+      <span class="ico"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <p class="tag">OWNER IN THE LOOP</p>
+      <h3>Holds become approvals, approvals become evidence</h3>
+      <p>An untrusted change turns into an owner approval that shows its lineage. The executor only pays the exact arguments that were decided, once, and every step lands in a hash-chained audit log you can verify.</p>
+      <a class="dark-btn small" href="/audit">Verify the audit log →</a>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 420 250">
+        <g font-family="ui-monospace,Menlo,monospace" font-size="11">
+          <rect x="20" y="40" width="104" height="54" rx="10" class="dn node"/><text x="34" y="64">#a91f</text><text x="34" y="82" fill="#8E826C">decision</text>
+          <rect x="158" y="40" width="104" height="54" rx="10" class="dn node"/><text x="172" y="64">#77c2</text><text x="172" y="82" fill="#8E826C">approval</text>
+          <rect x="296" y="40" width="104" height="54" rx="10" class="dn node"/><text x="310" y="64">#3e08</text><text x="310" y="82" fill="#8E826C">payment</text>
+          <path d="M124 67H158M262 67H296" class="ln good"/>
+          <rect x="108" y="140" width="204" height="62" rx="31" class="dn good"/><text x="150" y="168">owner approves</text><text x="150" y="186" fill="#E3EFD9">args hash must match</text>
+          <path d="M210 140V94" class="ln good" stroke-dasharray="4 5"/>
+        </g>
+      </svg>
+    </div>
+  </article>
+</section>
+
+<section class="lab block" id="lab">
+  <div class="lab-card">
+    <p class="eyebrow light reveal">Attack lab</p>
+    <h2 class="reveal d1">Try to <em>phish</em> the agent.</h2>
+    <p class="sub reveal d2">Write any message an attacker might send. A <strong>simulated compromised agent</strong>, one that always obeys the latest payment instruction it reads, handles it twice: with no guard, and behind Lineage. Nothing here moves real money.</p>
+
+    <div class="lab-grid reveal">
+      <form class="lab-form" id="lab-form">
+        <div class="seg" role="tablist" aria-label="Where the message arrives">
+          <button type="button" class="on" data-channel="email">Email</button>
+          <button type="button" data-channel="chat">Chat</button>
+          <button type="button" data-channel="tool">Tool output</button>
+        </div>
+        <label class="fld"><span>From</span><input id="lab-from" value="billing@acme-supp1ies.com" maxlength="120" autocomplete="off"></label>
+        <label class="fld"><span>Message</span><textarea id="lab-msg" rows="6" maxlength="1500"></textarea></label>
+        <div class="chips" id="lab-examples">
+          <button type="button" data-ex="bec">Vendor-change email</button>
+          <button type="button" data-ex="inj">Prompt injection</button>
+          <button type="button" data-ex="ceo">CEO urgency</button>
+          <button type="button" data-ex="ok">Harmless</button>
+        </div>
+        <button class="go" type="submit">Attack the agent <span aria-hidden="true">▸</span></button>
+        <p class="hint">The invoice is inv_1: $1,250.00 to Acme Supplies, approved on PO po_1.</p>
+      </form>
+
+      <div class="lab-out" id="lab-out" aria-live="polite">
+        <div class="side" id="side-none"><h4>No guard</h4><div class="body"><p class="idle">Run an attack to see what happens.</p></div></div>
+        <div class="side" id="side-lineage"><h4>Behind Lineage</h4><div class="body"><p class="idle">Run an attack to see what happens.</p></div></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <section id="benchmark" class="block">
   <p class="eyebrow reveal">Benchmark</p>
   <h2 class="reveal d1">Measured, <em>not claimed.</em></h2>
-  <p class="sub reveal d2">Share of attacks that moved money to the attacker, by defense. Numbers come from <code>make bench</code>; the attacker is simulated.</p>
+  <p class="sub reveal d2">The share of 12 attacks that moved money to the attacker, by defense. Numbers come from <code>make bench</code>; the attacker is simulated, and each layer alone misses a different class of attack.</p>
   <div class="bars reveal" id="bars" aria-live="polite"><p class="muted">Loading results…</p></div>
-  <p class="foot reveal">Each layer alone misses a different class of attack, which is why Lineage runs all three. <a href="/bench">Full table and per-scenario matrix →</a></p>
+  <p class="foot reveal"><a href="/bench">Full table and per-scenario matrix →</a></p>
 </section>
 
 <section id="rails" class="block">
   <p class="eyebrow reveal">One engine, two rails</p>
   <h2 class="reveal d1">Fiat and crypto, <em>same guard.</em></h2>
   <div class="rails">
-    <article class="rail reveal"><h3>PayPal Payouts</h3><p>Sandbox payouts through the Payouts API. Credentials live only in the executor; the agent can’t reach PayPal directly.</p><span class="tag">Sandbox</span></article>
-    <article class="rail reveal d1"><h3>NEAR Intents</h3><p>A Rust signer produces NEP-413 signatures only for intents the guard authorized, with destination, asset, deadline and nonce rules.</p><span class="tag dim">Signer built · execution in testing</span></article>
+    <article class="rail reveal"><h3>PayPal Payouts</h3><p>Sandbox payouts through the Payouts API. Credentials live only in the executor, so the agent can’t reach PayPal directly.</p><span class="badge">Sandbox</span></article>
+    <article class="rail reveal d1"><h3>NEAR Intents</h3><p>A Rust signer produces NEP-413 signatures only for intents the guard authorized, with destination, asset, deadline and nonce rules.</p><span class="badge dim">Signer built · execution in testing</span></article>
   </div>
 </section>
 
@@ -163,10 +254,12 @@
   </ul>
 </section>
 
-<section class="final">
-  <h2 class="reveal">Watch an attacker <em>fail.</em></h2>
-  <a class="btn primary big reveal d1" href="/demo">Run the attack <span aria-hidden="true">→</span></a>
-  <p class="muted reveal d2">Sandbox only. No real money.{{if .Simulated}} This instance uses a simulated payment rail.{{end}}</p>
+<section class="final-wrap">
+  <div class="final">
+    <h2 class="reveal">Watch an attacker <em>fail.</em></h2>
+    <a class="cream-btn reveal d1" href="/demo">Run the demo <span aria-hidden="true">▸</span></a>
+    <p class="reveal d2">Sandbox only. No real money.{{if .Simulated}} This instance uses a simulated payment rail.{{end}}</p>
+  </div>
 </section>
 </main>
 
