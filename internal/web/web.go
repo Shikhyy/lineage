@@ -176,7 +176,7 @@ func summarize(payouts []payoutView, decs []decisionView) (string, string) {
 		return "Money moved: " + strings.Join(sent, "; ") + ".", "moved"
 	}
 	if len(failed) > 0 {
-		return "No money moved. The payment rail rejected the payout (" + strings.Join(failed, "; ") + "), so nothing was sent.", "failed"
+		return "No money moved. The payout could not be completed at the payment rail (" + strings.Join(failed, "; ") + "), so nothing was sent.", "failed"
 	}
 	pending, blocked := 0, 0
 	for _, d := range decs {
