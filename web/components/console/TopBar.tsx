@@ -3,21 +3,15 @@
 import Link from "next/link";
 import { DEFENSES, DEFENSE_BLURB, DEFENSE_NAMES } from "@/lib/format";
 import type { Defense, Mode } from "@/lib/types";
+import { Mark } from "@/components/landing/Mark";
 import { railLabel } from "./Graph";
 import { useStore } from "./store";
 
 export type PanelName = "approvals" | "audit" | "benchmark";
 
+/** The same mark as the landing page and the favicon, so the brand reads as one product. */
 export function BrandMark() {
-  return (
-    <svg className="brandmark" viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-      <path d="M5 7 C13 7 12 14 20 14" fill="none" stroke="#E8431A" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M5 21 C13 21 12 14 20 14" fill="none" stroke="#2F6B3F" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="5" cy="7" r="2.6" fill="#E8431A" />
-      <circle cx="5" cy="21" r="2.6" fill="#2F6B3F" />
-      <rect x="19" y="9.5" width="7" height="9" rx="1.6" fill="none" stroke="#F2E5C8" strokeWidth="1.6" />
-    </svg>
-  );
+  return <Mark size={26} />;
 }
 
 export function TopBar({

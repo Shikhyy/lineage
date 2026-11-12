@@ -138,7 +138,7 @@ body:has(.cx) { background: #130B07; }
 .tb-controls { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; flex-wrap: wrap; }
 .tb-sel { display: flex; align-items: center; gap: 7px; }
 .tb-sel > span { font: 500 10px/1 var(--cx-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--cx-faint); }
-.tb-sel select { width: auto; min-height: 34px; height: 34px; padding-top: 0; padding-bottom: 0; max-width: 232px; font-size: 12.5px; }
+.tb-sel select { width: auto; min-height: 34px; height: 34px; padding-top: 0; padding-bottom: 0; max-width: 276px; font-size: 12.5px; }
 .cx .tb-lib { display: none; }
 .tb-panels { display: flex; gap: 4px; margin-left: auto; }
 .tb-pbtn { position: relative; display: inline-flex; align-items: center; gap: 7px; background: none; border: 1px solid transparent; border-radius: 7px; padding: 0 10px; height: 34px; color: var(--cx-dim); font-weight: 500; }
@@ -308,6 +308,7 @@ body:has(.cx) { background: #130B07; }
 .gx-out-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .gx-status { font: 500 10.5px/1 var(--cx-mono); color: var(--cx-dim); text-transform: uppercase; letter-spacing: 0.06em; }
 .gx-out-actions { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--cx-line); }
+.gx-out-actions .btn { height: auto; min-height: 34px; max-width: 100%; padding-block: 7px; white-space: normal; text-align: left; line-height: 1.25; }
 .gx-note { color: #FF9C7D; font-size: 12px; margin: 10px 2px 0; }
 .gx-out.kind-moved-bad { border-color: rgba(255, 90, 43, 0.8); background: linear-gradient(160deg, rgba(255, 90, 43, 0.17), var(--cx-bg2) 60%); box-shadow: 0 0 44px -14px rgba(255, 90, 43, 0.75); }
 .gx-out.kind-moved-bad .gx-out-head { color: #FF9C7D; }
@@ -439,7 +440,7 @@ body:has(.cx) { background: #130B07; }
 .eg-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
 /* ---------- compare ---------- */
-.cmp { padding: 20px 24px 28px; display: grid; gap: 18px; min-height: 100%; align-content: start; }
+.cmp { padding: 20px 24px 104px; display: grid; gap: 18px; min-height: 100%; align-content: start; }
 .cmp-head h1 { margin: 6px 0 0; font: 400 clamp(26px, 2.6vw, 38px)/1.1 var(--cx-serif); }
 .cmp-sum { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0; border: 1px solid var(--cx-line2); border-radius: 12px; overflow: hidden; background: var(--cx-bg2); }
 .cmp-sum-col { padding: 18px 22px; }
