@@ -15,7 +15,7 @@ Business email compromise is the dominant fraud against payables, and agents add
 
 ## Quickstart
 
-Requires Go 1.24+.
+Requires Go 1.24+ and Node 20+ (for the website).
 
 ```bash
 git clone https://github.com/Shikhyy/lineage.git
@@ -36,6 +36,8 @@ VENDOR_B_EMAIL=<sandbox personal account email>
 ATTACKER_EMAIL=<sandbox personal account email>
 ```
 
+**The payer must be a sandbox *business* account in a country where PayPal allows Payouts, such as the US.** Payouts sent from a sandbox business account in India were rejected with `PAYOUT_NOT_AVAILABLE: You live in a country that is not allowed to send this payout`. Sandbox apps are tied to the business account chosen when the app is created, so create a US business account first, then create the app against it, and use US personal accounts as payees. The app reports a rejected payout as "No money moved … the payment rail rejected the payout", never as money moved.
+
 The host is pinned to `https://api-m.sandbox.paypal.com`. There is no code path to live PayPal, and `PAYPAL_ENV` must be `sandbox` or the app refuses to start.
 
 Set `OWNER_SECRET` to sign in as the owner (needed to approve payments). If it is unset, a random secret is generated and printed in the log at startup.
@@ -48,7 +50,7 @@ The landing page at `/` has an **attack lab**: write any message an attacker mig
 
 1. Open http://localhost:3000/demo, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
 2. Run the same scenario with defense **lineage**. The decision is `ASK_OWNER`, nothing is paid, and the timeline shows the attacker's address came from an untrusted inbound email.
-3. Sign in at `/login`, open `/approvals`, and approve or reject. Approval pays through the executor and updates the vendor master.
+3. Open `/approvals`, sign in with the owner secret (`OWNER_SECRET`), and approve or reject. Approval pays through the executor and updates the vendor master.
 4. Open `/audit` to see the hash-chained log verify.
 
 ## How it works
@@ -141,7 +143,7 @@ What is **not** verified: no transaction has been broadcast from a funded, regis
 - A poisoned vendor master or a compromised owner channel is out of scope.
 - T1 sender matching is spoofable, so it never sets payment fields.
 - The `compromised` results come from a simulation, and the scenario set is small and written by the author, so the 0% attack-success figure describes this benchmark, not security in general. This is a deterministic enforcement point with measured results, not a proof of security.
-- PayPal calls are tested against a mocked sandbox server in the unit tests. A live sandbox payout needs your own sandbox credentials.
+- PayPal calls are tested against a mocked sandbox server in the unit tests. A live sandbox payout has not yet succeeded: the first attempt, from a sandbox business account in India, was rejected by PayPal (see the quickstart note on the payer's country), and the app correctly reported that no money moved.
 
 ## Layout
 
