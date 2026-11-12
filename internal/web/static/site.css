@@ -172,7 +172,7 @@ h3 { font: 500 clamp(22px, 2.2vw, 30px)/1.15 var(--serif); letter-spacing: -.01e
 }
 @media (max-width: 640px) {
   .bar { grid-template-columns: 1fr 76px; } .bar .name { grid-column: 1 / -1; }
-  .hero { border-radius: 22px; min-height: 660px; } .hero-in { padding-top: 40px; }
+  .hero { border-radius: 22px; min-height: 800px; } .hero-in { padding-top: 40px; }
   .art { bottom: -10px; width: 150%; }
 }
 @media (prefers-reduced-motion: reduce) {
