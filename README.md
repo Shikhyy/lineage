@@ -36,7 +36,7 @@ VENDOR_B_EMAIL=<sandbox personal account email>
 ATTACKER_EMAIL=<sandbox personal account email>
 ```
 
-**The payer must be a sandbox *business* account in a country where PayPal allows Payouts, such as the US.** Payouts sent from a sandbox business account in India were rejected with `PAYOUT_NOT_AVAILABLE: You live in a country that is not allowed to send this payout`. Sandbox apps are tied to the business account chosen when the app is created, so create a US business account first, then create the app against it, and use US personal accounts as payees. The app reports a rejected payout as "No money moved … the payment rail rejected the payout", never as money moved.
+**The payer must be a sandbox *business* account in a country where PayPal allows Payouts, such as the US.** Payouts sent from a sandbox business account in India were rejected with `PAYOUT_NOT_AVAILABLE: You live in a country that is not allowed to send this payout`. Sandbox apps are tied to the business account chosen when the app is created, so create a US business account first, then create the app against it, and use US personal accounts as payees. The app reports a payout that fails (a PayPal rejection or a network error) as "No money moved … the payout could not be completed", never as money moved.
 
 The host is pinned to `https://api-m.sandbox.paypal.com`. There is no code path to live PayPal, and `PAYPAL_ENV` must be `sandbox` or the app refuses to start.
 
@@ -143,7 +143,7 @@ What is **not** verified: no transaction has been broadcast from a funded, regis
 - A poisoned vendor master or a compromised owner channel is out of scope.
 - T1 sender matching is spoofable, so it never sets payment fields.
 - The `compromised` results come from a simulation, and the scenario set is small and written by the author, so the 0% attack-success figure describes this benchmark, not security in general. This is a deterministic enforcement point with measured results, not a proof of security.
-- PayPal calls are tested against a mocked sandbox server in the unit tests. A live sandbox payout has not yet succeeded: the first attempt, from a sandbox business account in India, was rejected by PayPal (see the quickstart note on the payer's country), and the app correctly reported that no money moved.
+- PayPal calls are tested against a mocked sandbox server in the unit tests, and have also been run against the real sandbox: a legitimate invoice payout (B1) and an unguarded attack payout (A2, simulated compromised agent) were each accepted by PayPal with status `PENDING`, and the same attack behind Lineage was held for the owner with no payout. A first attempt from a sandbox business account in India was rejected by PayPal (see the quickstart note on the payer's country). Receipt of the funds in the payee accounts is checked by hand in the sandbox dashboard, not by the app.
 
 ## Layout
 
