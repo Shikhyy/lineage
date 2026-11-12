@@ -262,7 +262,7 @@ func (s *Server) apiRun(w http.ResponseWriter, r *http.Request) {
 	// Runs share the demo database (fixtures and memory are reset per run), so serialize them.
 	s.runMu.Lock()
 	defer s.runMu.Unlock()
-	_ = s.Rec.DeleteRunFragments(agent.MemoryRun)
+	_ = s.Rec.ArchiveRunFragments(agent.MemoryRun, "memory-archive")
 	if err := scenario.Seed(s.Rec, *sc, s.Addr); err != nil {
 		apiErr(w, http.StatusInternalServerError, err.Error())
 		return

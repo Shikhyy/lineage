@@ -374,6 +374,11 @@ func (t *toolbox) pay(ctx context.Context, tc ToolCall) string {
 		if err != nil {
 			return "error: " + err.Error()
 		}
+		// Record the unguarded "decision" too, so the run shows that no check ran at all.
+		_ = rec.AddStep(t.run.ID, "decision", string(guard.Allow), map[string]any{
+			"decision_id": d.ID, "verdict": guard.Allow, "args": a,
+			"reasons": []guard.Reason{{Code: "NO_GUARD", Message: "defense is " + string(t.defense) + ": no check ran", Effect: guard.Allow}},
+		})
 		return t.execute(ctx, d.ID, a)
 	}
 	g := guard.New(cfg, rec, t.env.Audit)

@@ -211,10 +211,20 @@ func (s *Server) resolve(ctx context.Context, id, status string) (runID string, 
 	if s.Audit != nil {
 		_, _ = s.Audit.Append("approval_"+status, map[string]string{"approval_id": id, "decision_id": d.ID})
 	}
+	if status == "rejected" {
+		_ = s.Rec.AddStep(d.RunID, "owner", "Owner rejected the held payment", map[string]any{"decision_id": d.ID, "approval_id": id})
+	}
 	if status == "approved" {
-		if _, err := s.Exec.Execute(ctx, d.ID, nil); err != nil {
+		out, err := s.Exec.Execute(ctx, d.ID, nil)
+		if err != nil {
+			_ = s.Rec.AddStep(d.RunID, "error", "Owner approved, but the payout failed: "+err.Error(), map[string]any{"decision_id": d.ID})
 			return d.RunID, err
 		}
+		var a guard.PayArgs
+		_ = json.Unmarshal([]byte(d.ArgsJSON), &a)
+		_ = s.Rec.AddStep(d.RunID, "payment",
+			fmt.Sprintf("owner approved: paid %s %d cents (%s)", a.Payee, a.AmountCents, out.Payment.Status),
+			map[string]any{"decision_id": d.ID, "owner_approved": true, "payment": out.Payment, "rail": s.Exec.RailName()})
 	}
 	return d.RunID, nil
 }

@@ -287,10 +287,11 @@ func (s *Store) Fragments(ids []string) ([]prov.Fragment, error) {
 	return out, nil
 }
 
-// DeleteRunFragments removes the fragments of a run (used to reset the
-// shared memory before a demo scenario re-seeds it).
-func (s *Store) DeleteRunFragments(runID string) error {
-	_, err := s.db.Exec(`DELETE FROM fragments WHERE run_id=?`, runID)
+// ArchiveRunFragments moves the fragments of a run out of the way (used to reset the shared
+// memory before a demo scenario re-seeds it) without deleting them, so earlier runs can still
+// show where their memory came from.
+func (s *Store) ArchiveRunFragments(runID, archiveID string) error {
+	_, err := s.db.Exec(`UPDATE fragments SET run_id=? WHERE run_id=?`, archiveID, runID)
 	return err
 }
 
