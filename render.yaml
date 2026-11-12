@@ -1,6 +1,9 @@
+# Two services: the Go API (Docker) and the Next.js website. Deploy the API first, then set the
+# website's GO_API_URL to the API's public URL *before* its first build: Next.js bakes the /api and
+# /v1 proxy rewrites in at build time, so changing GO_API_URL later needs a rebuild.
 services:
   - type: web
-    name: lineage
+    name: lineage-api
     runtime: docker
     plan: free
     healthCheckPath: /healthz
@@ -23,3 +26,17 @@ services:
         sync: false
       - key: LLM_MODEL
         sync: false
+
+  - type: web
+    name: lineage-web
+    runtime: node
+    plan: free
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: GO_API_URL
+        sync: false # e.g. https://lineage-api.onrender.com
+      - key: NODE_VERSION
+        value: "22"

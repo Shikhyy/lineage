@@ -21,7 +21,9 @@ Requires Go 1.24+.
 git clone https://github.com/Shikhyy/lineage.git
 cd lineage
 cp .env.example .env      # optional: add PayPal sandbox credentials
-make run                  # http://localhost:8080
+make run                  # the Go API on http://localhost:8080
+make web-install          # once: install the Next.js app's dependencies
+make web-dev              # the website on http://localhost:3000 (proxies /api and /v1 to the API)
 ```
 
 With no PayPal credentials the app runs with a **simulated rail** and says so in a banner on every page. No money moves, not even sandbox money. To use the PayPal sandbox, create a sandbox app and four sandbox accounts (a business payer, two vendors and an attacker), then set in `.env`:
@@ -44,7 +46,7 @@ The landing page at `/` has an **attack lab**: write any message an attacker mig
 
 ### Try the demo
 
-1. Open `/`, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
+1. Open http://localhost:3000/demo, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
 2. Run the same scenario with defense **lineage**. The decision is `ASK_OWNER`, nothing is paid, and the timeline shows the attacker's address came from an untrusted inbound email.
 3. Sign in at `/login`, open `/approvals`, and approve or reject. Approval pays through the executor and updates the vendor master.
 4. Open `/audit` to see the hash-chained log verify.
@@ -153,7 +155,8 @@ internal/executor  guarded payment executor (PayPal rail, simulated rail)
 internal/paypal    sandbox-pinned OAuth + Payouts client
 internal/agent     tool-use loop, LLM interface, scripted/compromised modes
 internal/scenario  scenario loader and runner
-internal/web       UI and /v1 API
+internal/web       JSON API (/v1 for agents, /api for the website)
+web/               Next.js (App Router, TypeScript) website that talks to the API
 scenarios/         PayBench-BEC scenario files
 ```
 

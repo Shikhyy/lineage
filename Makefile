@@ -1,5 +1,14 @@
 .PHONY: run test bench demo lint build near-test
 
+web-install:
+	cd web && npm install
+
+web-dev:
+	cd web && GO_API_URL=$${GO_API_URL:-http://localhost:8080} npm run dev
+
+web-build:
+	cd web && GO_API_URL=$${GO_API_URL:-http://localhost:8080} npm run build
+
 near-test:
 	cd adapters/near && cargo test
 
