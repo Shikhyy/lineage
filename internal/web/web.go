@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/Shikhyy/lineage/internal/agent"
 	"github.com/Shikhyy/lineage/internal/audit"
@@ -42,8 +43,9 @@ type Server struct {
 	Simulated   bool   // payment rail is simulated (no PayPal credentials)
 	ResultsPath string // results/latest.md
 
-	tpl *template.Template
-	lim limiter
+	tpl   *template.Template
+	lim   limiter
+	runMu sync.Mutex // serializes demo runs: they reseed the shared fixtures
 }
 
 // Page is the data passed to every template.
@@ -94,6 +96,7 @@ func (s *Server) Handler() (http.Handler, error) {
 	mux.HandleFunc("POST /logout", s.logout)
 
 	s.apiRoutes(mux)
+	s.appRoutes(mux)
 	return mux, nil
 }
 

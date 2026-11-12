@@ -229,6 +229,103 @@ func TestAttackLab(t *testing.T) {
 	}
 }
 
+func TestAppAPIFlow(t *testing.T) {
+	ts, _ := newServer(t)
+	jar, _ := cookiejar.New(nil)
+	c := &http.Client{Jar: jar}
+	call := func(method, path string, body any) (int, map[string]any, []any) {
+		var rdr io.Reader
+		if body != nil {
+			b, _ := json.Marshal(body)
+			rdr = bytes.NewReader(b)
+		}
+		req, _ := http.NewRequest(method, ts.URL+path, rdr)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		raw, _ := io.ReadAll(resp.Body)
+		var obj map[string]any
+		var arr []any
+		if json.Unmarshal(raw, &obj) != nil {
+			_ = json.Unmarshal(raw, &arr)
+		}
+		return resp.StatusCode, obj, arr
+	}
+
+	if code, me, _ := call("GET", "/api/me", nil); code != 200 || me["owner"] != false || me["simulated"] != true || me["rail"] != "simulated" {
+		t.Fatalf("me: %d %v", code, me)
+	}
+	_, _, scs := call("GET", "/api/scenarios", nil)
+	if len(scs) < 17 || scs[0].(map[string]any)["kind"] != "benign" {
+		t.Fatalf("scenarios should list >=17, benign first: %d", len(scs))
+	}
+	if code, _, _ := call("POST", "/api/run", map[string]any{"scenario": "nope", "mode": "compromised", "defense": "lineage"}); code != 400 {
+		t.Fatalf("unknown scenario must be 400, got %d", code)
+	}
+
+	code, run, _ := call("POST", "/api/run", map[string]any{"scenario": "a2-bec-vendor-change", "mode": "compromised", "defense": "lineage"})
+	if code != 200 || run["run_id"] == nil {
+		t.Fatalf("run: %d %v", code, run)
+	}
+	runID := run["run_id"].(string)
+
+	_, detail, _ := call("GET", "/api/runs/"+runID, nil)
+	if detail["outcome_class"] != "safe" || !strings.Contains(detail["outcome"].(string), "waiting for owner approval") {
+		t.Fatalf("detail outcome: %v", detail["outcome"])
+	}
+	var decision map[string]any
+	for _, st := range detail["steps"].([]any) {
+		if d := st.(map[string]any)["decision"]; d != nil {
+			decision = d.(map[string]any)
+		}
+	}
+	if decision == nil || decision["verdict"] != "ASK_OWNER" || decision["approval"].(map[string]any)["status"] != "pending" {
+		t.Fatalf("expected a pending ASK_OWNER decision: %v", decision)
+	}
+	origin := decision["lineage"].([]any)[0].(map[string]any)["origins"].([]any)[0].(map[string]any)
+	if origin["trust"].(float64) != 0 || origin["snippet"] == "" {
+		t.Fatalf("lineage origin should be T0 with a snippet: %v", origin)
+	}
+
+	if code, _, _ := call("GET", "/api/approvals", nil); code != 401 {
+		t.Fatalf("approvals without login must be 401, got %d", code)
+	}
+	if code, _, _ := call("POST", "/api/login", map[string]any{"secret": "wrong"}); code != 401 {
+		t.Fatalf("wrong secret must be 401, got %d", code)
+	}
+	if code, _, _ := call("POST", "/api/login", map[string]any{"secret": secret}); code != 200 {
+		t.Fatalf("login failed: %d", code)
+	}
+	_, ap, _ := call("GET", "/api/approvals", nil)
+	pending := ap["pending"].([]any)
+	if len(pending) != 1 {
+		t.Fatalf("expected one pending approval, got %d", len(pending))
+	}
+	apID := pending[0].(map[string]any)["approval"].(map[string]any)["id"].(string)
+	if code, _, _ := call("POST", "/api/approvals/"+apID+"/resolve", map[string]any{"action": "maybe"}); code != 400 {
+		t.Fatalf("bad action must be 400, got %d", code)
+	}
+	code, res, _ := call("POST", "/api/approvals/"+apID+"/resolve", map[string]any{"action": "approve"})
+	if code != 200 || res["run_id"] != runID {
+		t.Fatalf("resolve: %d %v", code, res)
+	}
+	_, after, _ := call("GET", "/api/runs/"+runID, nil)
+	if after["outcome_class"] != "moved" || len(after["payouts"].([]any)) != 1 {
+		t.Fatalf("approval should pay: %v", after["outcome"])
+	}
+	if code, _, _ := call("POST", "/api/logout", nil); code != 200 {
+		t.Fatalf("logout: %d", code)
+	}
+	if code, _, _ := call("GET", "/api/approvals", nil); code != 401 {
+		t.Fatalf("after logout approvals must be 401, got %d", code)
+	}
+	if _, rep, _ := call("GET", "/api/bench/report", nil); rep["markdown"] == nil {
+		t.Fatal("bench report should return markdown")
+	}
+}
+
 func TestLimiter(t *testing.T) {
 	var l limiter
 	for i := 0; i < 3; i++ {
