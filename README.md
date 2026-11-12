@@ -38,6 +38,10 @@ The host is pinned to `https://api-m.sandbox.paypal.com`. There is no code path 
 
 Set `OWNER_SECRET` to sign in as the owner (needed to approve payments). If it is unset, a random secret is generated and printed in the log at startup.
 
+### Try to phish it (the attack lab)
+
+The landing page at `/` has an **attack lab**: write any message an attacker might send (email, chat or tool output) and the same message is handled twice by a simulated compromised agent, once with no guard and once behind Lineage. You see whether money moved, the guard's reasons, and the lineage of the payee, traced to the exact untrusted message. It runs in memory on the simulated rail, so no money moves, and it is rate-limited to 20 attacks a minute per client. The agent is a simulation that follows the latest payment instruction it can recognise (an address near a verb like "pay" or "send"), so it shows what the guard does and not how a real model behaves.
+
 ### Try the demo
 
 1. Open `/`, pick **A2 · BEC: lookalike domain says the payout email changed**, mode **compromised**, defense **none**, and run it. The simulated compromised agent pays the attacker.
