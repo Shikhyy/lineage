@@ -110,10 +110,25 @@ export interface Scenario {
   owner_approves: boolean;
 }
 
-export interface RunRequest {
-  scenario: string;
-  mode: Mode;
-  defense: Defense;
+export interface CustomAttack {
+  message: string;
+  channel: AttackChannel;
+  from?: string;
+}
+
+/** A library scenario or a visitor-written attack, never both. */
+export type RunRequest =
+  | { scenario: string; mode: Mode; defense: Defense }
+  | { custom: CustomAttack; mode: Mode; defense: Defense };
+
+/** What a fragment is: the unit of provenance. `parent_ids` link a fragment to what it was derived from (memory <- chat). */
+export interface Fragment {
+  id: string;
+  kind: string;
+  trust: number;
+  source: string;
+  snippet: string;
+  parent_ids: string[] | null;
 }
 
 export interface Run {
@@ -189,8 +204,11 @@ export interface RunDetail {
   rail: string;
   outcome: string;
   outcome_class: "safe" | "moved" | "failed";
+  scenario_title: string;
+  scenario_kind: "benign" | "attack";
   steps: Step[] | null;
   payouts: Payout[] | null;
+  fragments: Fragment[] | null;
 }
 
 export interface Approvals {

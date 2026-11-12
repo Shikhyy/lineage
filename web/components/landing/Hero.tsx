@@ -1,64 +1,81 @@
-import { HeroArt } from "./HeroArt";
-import { Reveal } from "./Reveal";
+"use client";
 
-const LEFT = `{"fragment":"frag_9c2e","kind":"email",
- "trust":"T0","source":"billing@acme-supp1ies.com",
- "sha256":"3f1a9be0…"}
-decide(pay_vendor) →
-  payee  attacker@sandbox.test
-  vendor vendor-a@sandbox.test
-  trace  only in T0 sources
-  ⇒ ASK_OWNER UNTRUSTED_PAYEE_CHANGE
-{"audit":{"seq":14,"prev":"a91f…",
- "hash":"77c2…"}}
-C2 amount ≤ approved PO  ✓
-C2 invoice vendor = PO vendor ✓
-C3 payee grounded in T2  ✗`;
+import { useEffect, useRef } from "react";
+import { Button } from "@/components/ui/Button";
+import { SplitText } from "@/components/ui/SplitText";
+import { gsap } from "@/lib/motion/gsap";
+import { reducedNow } from "@/lib/motion/env";
+import { onReady } from "@/lib/motion/ready";
+import { EvidenceTag } from "./EvidenceTag";
 
-const RIGHT = `memory.recall("payout")
-→ "Acme payout email: …"
-  trust T0 (written from a stranger
-  chat), parent frag_41d0
-tool.lookup_vendor →
-  vendor record T2 ✓
-  injected text T0 ✗
-nonce  reused?  no
-deadline ttl    ≤ 300s ✓
-asset  allowlisted ✓
-guard 0.2 ms · outside the LLM`;
+type Stat = { attacks: number; noneWins: number; fullWins: number } | null;
 
-export function Hero() {
+export function Hero({ stat }: { stat: Stat }) {
+  const root = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el || reducedNow()) {
+      el?.setAttribute("data-intro", "done");
+      return;
+    }
+    const q = gsap.utils.selector(el);
+    gsap.set(q("[data-in]"), { opacity: 0, y: 18 });
+    gsap.set(q(".hero-rule"), { scaleX: 0, transformOrigin: "0 50%" });
+    const off = onReady(() => {
+      const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+      tl.to(q(".hero-rule"), { scaleX: 1, duration: 1.6 }, 0.1)
+        .to(q("[data-in]"), { opacity: 1, y: 0, duration: 1.1, stagger: 0.09 }, 0.55);
+    });
+    return () => {
+      off();
+      gsap.killTweensOf(q("[data-in],.hero-rule"));
+    };
+  }, []);
+
   return (
-    <div className="hero">
-      <pre className="code left" aria-hidden="true">{LEFT}</pre>
-      <pre className="code right" aria-hidden="true">{RIGHT}</pre>
+    <section className="hero" id="top" ref={root}>
+      <div className="hero-meta mono-label" data-in>
+        <span>Provenance-gated payments for AI agents</span>
+        <span className="hero-meta-r">File no. 01 · Chain of custody</span>
+      </div>
+      <div className="hero-rule" aria-hidden="true" />
 
-      <div className="hero-in">
-        <Reveal as="p" className="chip">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <path d="M8 1l2 4.5 4.8.5-3.6 3.2 1 4.8L8 11.6 3.8 14l1-4.8L1.2 6l4.8-.5z" fill="currentColor" />
-          </svg>{" "}
-          Provenance-gated payments for AI agents
-        </Reveal>
-        <Reveal as="h1" delay={1}>
-          Move beyond blind trust. Pay only what has <em>provenance.</em>
-        </Reveal>
-        <Reveal as="p" delay={2} className="lede">
-          Lineage traces where every payee, address and amount came from, and holds anything that originated in an
-          untrusted email, chat or memory. The rule runs <strong>outside the model</strong>, so even a jailbroken agent
-          can’t pay an attacker.
-        </Reveal>
-        <Reveal delay={3} className="cta">
-          <a className="dark-btn big" href="#lab">
-            Try to phish it <span aria-hidden="true">▸</span>
-          </a>
-          <a className="ghost-btn" href="#benchmark">
-            See the benchmark
-          </a>
-        </Reveal>
+      <EvidenceTag />
+
+      <h1 className="display hero-h">
+        <SplitText as="span" className="hero-hl" trigger="load" lineStagger={0.13} text={"Pay only\nwhat you can\n*trace home.*"} />
+      </h1>
+
+      <div className="hero-foot">
+        <p className="hero-lede" data-in>
+          Lineage follows every payee, address and amount back to the place it was born. If it was born in an inbound email,
+          a chat or a memory, it can <em>never</em> decide where money goes. The rule runs outside the model, so even a
+          jailbroken agent cannot talk its way past it.
+        </p>
+        <div className="hero-cta" data-in>
+          <Button href="#lab">Try to phish it</Button>
+          <Button href="/console" variant="line">
+            Open the console
+          </Button>
+        </div>
       </div>
 
-      <HeroArt />
-    </div>
+      <div className="hero-base mono-label" data-in>
+        <span className="hero-scroll">
+          <i aria-hidden="true" /> Scroll to follow a payee
+        </span>
+        <span className="hero-fact">
+          {stat ? (
+            <>
+              Simulated compromised agent · {stat.noneWins}/{stat.attacks} attacks land with no guard · <b>{stat.fullWins}/{stat.attacks}</b> behind Lineage
+            </>
+          ) : (
+            <>Benchmark numbers unavailable: API unreachable</>
+          )}
+        </span>
+        <span className="hero-sbx">Sandbox only</span>
+      </div>
+    </section>
   );
 }
