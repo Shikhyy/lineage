@@ -6,7 +6,11 @@ import { ApprovalActions, LoginForm } from "@/components/app/Forms";
 import { api, fetched } from "@/lib/api";
 import { ownerCookie } from "@/lib/server";
 
-export const metadata: Metadata = { title: "Owner approvals" };
+// The tab title follows what the page shows: a sign-in form for visitors, the queue for the owner.
+export async function generateMetadata(): Promise<Metadata> {
+  const me = await fetched(api.me({ cookie: await ownerCookie() }));
+  return { title: me.ok && me.data.owner ? "Owner approvals" : "Owner sign-in" };
+}
 
 export default async function ApprovalsPage() {
   const cookie = await ownerCookie();

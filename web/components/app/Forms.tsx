@@ -64,7 +64,7 @@ export function RunForm({ scenarios, llmModel }: { scenarios: Scenario[]; llmMod
           <select value={defense} onChange={(e) => setDefense(e.target.value as Defense)}>
             {DEFENSES.map((d) => (
               <option key={d} value={d}>
-                {DEFENSE_NAMES[d] === d ? d : `${d} (${DEFENSE_NAMES[d]})`}
+                {d === "lineage" ? "lineage (full guard)" : DEFENSE_NAMES[d]}
               </option>
             ))}
           </select>

@@ -64,7 +64,7 @@ export function DecisionCard({ d, actions }: { d: Decision; actions?: ReactNode 
       {d.approval && (
         <div className="row">
           Owner approval: <b>{d.approval.status}</b>
-          {d.approval.status === "pending" && (
+          {d.approval.status === "pending" && !actions && (
             <>
               {" "}
               · <Link href="/approvals">review in approvals</Link>
