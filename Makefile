@@ -1,4 +1,4 @@
-.PHONY: run test bench demo lint build near-test
+.PHONY: run test bench demo lint build near-test near-stack
 
 web-install:
 	cd web && npm install
@@ -31,3 +31,11 @@ demo:
 lint:
 	go vet ./...
 	gofmt -l .
+
+# Guard API on :8080 with the Rust signer on :8090 wired in (needs cargo). Ctrl-C stops both.
+near-stack:
+	cd adapters/near && cargo build --release
+	@trap 'kill 0' INT TERM EXIT; \
+	(cd adapters/near && GUARD_URL=http://localhost:8080 ADAPTER_PORT=8090 ./target/release/lineage-near) & \
+	NEAR_ADAPTER_URL=http://localhost:8090 go run ./cmd/lineage & \
+	wait

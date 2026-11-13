@@ -18,6 +18,7 @@ import (
 	"github.com/Shikhyy/lineage/internal/db"
 	"github.com/Shikhyy/lineage/internal/executor"
 	"github.com/Shikhyy/lineage/internal/guard"
+	"github.com/Shikhyy/lineage/internal/nearsign"
 	"github.com/Shikhyy/lineage/internal/paypal"
 	"github.com/Shikhyy/lineage/internal/records"
 	"github.com/Shikhyy/lineage/internal/scenario"
@@ -133,8 +134,16 @@ func main() {
 		log.Printf("OWNER_SECRET is not set: generated one for this process: %s", secret)
 	}
 
+	exec := executor.New(rec, alog, rail)
+	if u := os.Getenv("NEAR_ADAPTER_URL"); u != "" {
+		exec.UseSigner(nearsign.New(u))
+		log.Printf("NEAR signer: lineage-near adapter at %s (intents are really signed)", u)
+	} else {
+		log.Printf("NEAR signer: none (intents are recorded as SIMULATED_SIGNED; set NEAR_ADAPTER_URL to sign for real)")
+	}
+
 	srv := &web.Server{
-		Rec: rec, Audit: alog, Exec: executor.New(rec, alog, rail), Guard: gcfg, Addr: ad,
+		Rec: rec, Audit: alog, Exec: exec, Guard: gcfg, Addr: ad,
 		Secret: secret, LLM: llm, LLMModel: model, Simulated: simulated, ResultsPath: "results/latest.md",
 	}
 	h, err := srv.Handler()

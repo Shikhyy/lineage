@@ -243,7 +243,9 @@ The landing page has an **attack lab**: write any message an attacker might send
 
 The guard also decides `sign_intent` calls for NEAR Intents (`POST /v1/decide` with `call.tool = "sign_intent"` and `call.intent`). Critical fields: the destination account must be grounded in the vendor record or an owner instruction; the asset must be on `ALLOWED_ASSETS`; the deadline must be within `MAX_INTENT_TTL_SECONDS`; and every nonce is single-use. An external signer confirms authorization with `GET /v1/decisions/{id}` and reports what it did with `POST /v1/decisions/{id}/attest`.
 
-Benchmark scenarios I1–I4 (destination swap, token-metadata injection, stale deadline, solver-message injection) run with a **simulated** signature.
+Benchmark scenarios I1–I4 (destination swap, token-metadata injection, stale deadline, solver-message injection) always run with a **simulated** signature, so the benchmark needs no second process.
+
+**Live signer in the console.** Start both processes with `make near-stack` (the API gets `NEAR_ADAPTER_URL`). A NEAR scenario run from the console or `/api/run` then ends in one of three ways: `ALLOW` and the Rust signer returns a real NEP-413 signature (shown in the run's inspector); `ASK_OWNER` and nothing is signed until the owner approves, after which the same code path signs exactly the decided intent; or `BLOCK` and the signer is never called. The console checks each signature **in your browser** (rebuilds the NEP-413 bytes, sha256, ed25519 verify with WebCrypto), so you do not have to trust the server's word that it is valid. Without `NEAR_ADAPTER_URL` the same runs are recorded as `SIMULATED_SIGNED`, and the UI says so. A signed intent is described as "signed", never as "money moved": it settles only if someone broadcasts it, and until then it is a bearer instrument.
 
 `adapters/near` is a Rust signer (`lineage-near`) that holds the NEAR key and signs a NEP-413 message only after the guard authorizes the exact intent. The agent never sees the key.
 

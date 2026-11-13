@@ -163,14 +163,22 @@ type payoutView struct {
 // summarize states plainly what happened to the money in a run.
 func summarize(payouts []payoutView, decs []decisionView) (string, string) {
 	// A payout the rail rejected sent nothing, so it must never be reported as money moved.
-	var sent, failed []string
+	var sent, failed, signed []string
 	for _, p := range payouts {
 		line := fmt.Sprintf("$%d.%02d to %s", p.Cents/100, p.Cents%100, p.Payee)
-		if p.Status == "failed" {
+		switch {
+		case p.Status == "failed":
 			failed = append(failed, line)
-		} else {
+		case p.Status == "SIGNED" || p.Status == "SIMULATED_SIGNED":
+			signed = append(signed, line)
+		default:
 			sent = append(sent, line)
 		}
+	}
+	// A signed NEAR intent has not settled until someone broadcasts it, but the signature
+	// is a bearer instrument: whoever holds it can settle it. Say exactly that.
+	if len(signed) > 0 && len(sent) == 0 {
+		return "Intent signed: " + strings.Join(signed, "; ") + ". Not broadcast by Lineage, but anyone holding this signature can settle it.", "moved"
 	}
 	if len(sent) > 0 {
 		return "Money moved: " + strings.Join(sent, "; ") + ".", "moved"
@@ -213,6 +221,18 @@ func (s *Server) resolve(ctx context.Context, id, status string) (runID string, 
 	}
 	if status == "rejected" {
 		_ = s.Rec.AddStep(d.RunID, "owner", "Owner rejected the held payment", map[string]any{"decision_id": d.ID, "approval_id": id})
+	}
+	if status == "approved" && d.Tool == guard.ToolSignIntent {
+		pay, _, err := s.Exec.SignIntent(ctx, d.ID)
+		if err != nil {
+			_ = s.Rec.AddStep(d.RunID, "error", "Owner approved, but signing failed: "+err.Error(), map[string]any{"decision_id": d.ID})
+			return d.RunID, err
+		}
+		var in guard.IntentArgs
+		_ = json.Unmarshal([]byte(d.ArgsJSON), &in)
+		_ = s.Rec.AddStep(d.RunID, "payment", fmt.Sprintf("owner approved: signed intent to %s (%s)", in.Destination, pay.Status),
+			map[string]any{"decision_id": d.ID, "owner_approved": true, "intent": in, "payment": pay, "rail": pay.Rail})
+		return d.RunID, nil
 	}
 	if status == "approved" {
 		out, err := s.Exec.Execute(ctx, d.ID, nil)

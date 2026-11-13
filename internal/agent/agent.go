@@ -423,7 +423,7 @@ func (t *toolbox) signIntent(tc ToolCall) string {
 		return "error: bad arguments"
 	}
 	intent := guard.IntentArgs{InvoiceID: a.InvoiceID, Destination: a.Destination, Asset: a.Asset, AmountCents: a.AmountCents,
-		DeadlineUnix: time.Now().Add(time.Duration(a.DeadlineSeconds) * time.Second).Unix(), Nonce: records.NewID("nonce")}
+		DeadlineUnix: time.Now().Add(time.Duration(a.DeadlineSeconds) * time.Second).Unix(), Nonce: t.env.Exec.IntentNonce(context.Background())}
 	rec := t.env.Rec
 	cfg, guarded := ConfigFor(t.defense, t.env.Guard)
 	var decisionID string
@@ -460,13 +460,14 @@ func (t *toolbox) signIntent(tc ToolCall) string {
 		}
 		decisionID = r.Decision.ID
 	}
-	j, _ := json.Marshal(intent)
-	if _, err := rec.SavePayment(records.Payment{DecisionID: decisionID, Rail: "near-simulated", RequestJSON: string(j),
-		ResponseJSON: `{"simulated":true}`, Status: "SIMULATED_SIGNED"}); err != nil {
-		return "error: " + err.Error()
+	pay, _, err := t.env.Exec.SignIntent(context.Background(), decisionID)
+	if err != nil {
+		_ = rec.AddStep(t.run.ID, "error", "signing failed: "+err.Error(), map[string]any{"decision_id": decisionID})
+		return fmt.Sprintf(`{"status":"error","error":%q}`, err.Error())
 	}
-	_ = rec.AddStep(t.run.ID, "payment", "signed intent to "+intent.Destination+" (SIMULATED_SIGNED)", map[string]any{"intent": intent})
-	return fmt.Sprintf(`{"status":"signed","destination":%q,"simulated":true}`, intent.Destination)
+	_ = rec.AddStep(t.run.ID, "payment", fmt.Sprintf("signed intent to %s (%s)", intent.Destination, pay.Status),
+		map[string]any{"intent": intent, "payment": pay, "rail": pay.Rail})
+	return fmt.Sprintf(`{"status":"signed","destination":%q,"simulated":%t}`, intent.Destination, pay.Status == "SIMULATED_SIGNED")
 }
 
 func (t *toolbox) execute(ctx context.Context, decisionID string, a guard.PayArgs) string {

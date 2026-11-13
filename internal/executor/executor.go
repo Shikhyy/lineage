@@ -80,9 +80,10 @@ type Outcome struct {
 
 // Executor runs authorized decisions.
 type Executor struct {
-	rec   *records.Store
-	audit *audit.Log
-	rail  Rail
+	rec    *records.Store
+	audit  *audit.Log
+	rail   Rail
+	signer IntentSigner
 }
 
 // New returns an Executor. audit may be nil.

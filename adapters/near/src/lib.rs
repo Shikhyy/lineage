@@ -96,16 +96,22 @@ pub fn build_message(cfg: &Config, i: &Intent) -> Result<String, String> {
     .to_string())
 }
 
+/// A fresh 32-byte nonce (base64) whose first four bytes are the Verifier's current salt, when known.
+/// The caller can ask for one up front so the guard decides on the exact nonce that will be signed.
+pub fn new_nonce(cfg: &Config) -> String {
+    let mut n = [0u8; 32];
+    rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut n);
+    if let Some(salt) = cfg.salt {
+        n[..4].copy_from_slice(&salt);
+    }
+    B64.encode(n)
+}
+
 /// Runs one signing request. Returns a JSON body describing the outcome.
 /// `Err` means the request itself was invalid or not authorized.
 pub fn handle(cfg: &Config, g: &dyn GuardApi, signer: &nep413::Signer, mut req: SignRequest) -> Result<Value, String> {
     if req.intent.nonce.is_empty() {
-        let mut n = [0u8; 32];
-        rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut n);
-        if let Some(salt) = cfg.salt {
-            n[..4].copy_from_slice(&salt);
-        }
-        req.intent.nonce = B64.encode(n);
+        req.intent.nonce = new_nonce(cfg);
     }
     let nonce: [u8; 32] = B64
         .decode(&req.intent.nonce)
@@ -276,6 +282,15 @@ mod tests {
         assert!(parse_salt(b"\"zzzzzzzz\"").is_err());
         assert!(parse_salt(b"\"abc\"").is_err());
         assert!(parse_salt(b"not json").is_err());
+    }
+
+    #[test]
+    fn new_nonce_is_32_bytes_and_carries_the_salt() {
+        let cfg = Config { account_id: "a.testnet".into(), salt: Some([9, 8, 7, 6]), submit: None };
+        let n = B64.decode(new_nonce(&cfg)).unwrap();
+        assert_eq!(n.len(), 32);
+        assert_eq!(&n[..4], &[9, 8, 7, 6]);
+        assert_ne!(new_nonce(&cfg), new_nonce(&cfg));
     }
 
     #[test]

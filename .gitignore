@@ -21,6 +21,9 @@ AGENTS.md
 .idea/
 .vscode/
 
+# local screen recordings (large, never committed)
+video/
+
 # raw benchmark rows (regenerate with make bench)
 results/latest.json
 

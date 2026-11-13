@@ -1,4 +1,4 @@
-use lineage_near::{fetch_salt, guard::HttpGuard, handle, nep413::Signer, Config, SignRequest, SubmitCfg};
+use lineage_near::{fetch_salt, new_nonce, guard::HttpGuard, handle, nep413::Signer, Config, SignRequest, SubmitCfg};
 
 fn hex(b: &[u8]) -> String {
     b.iter().map(|x| format!("{x:02x}")).collect()
@@ -66,6 +66,15 @@ fn main() {
     for mut rq in server.incoming_requests() {
         let resp = match (rq.method(), rq.url()) {
             (Method::Get, "/healthz") => Response::from_string("ok").with_status_code(200).with_header(Header::from_bytes("Content-Type", "text/plain").unwrap()),
+            (Method::Get, "/nonce") => {
+                let cfg = Config {
+                    account_id: account_id.clone(),
+                    salt: fixed_salt.or_else(|| fetch_salt(&rpc_url, &verifier).ok()),
+                    submit: None,
+                };
+                json_response(200, serde_json::json!({"nonce": new_nonce(&cfg), "salt_checked": cfg.salt.is_some(),
+                    "public_key": signer.public_key_string(), "account_id": account_id}))
+            }
             (Method::Post, "/sign-intent") => {
                 let mut body = String::new();
                 let _ = rq.as_reader().take(1 << 20).read_to_string(&mut body);

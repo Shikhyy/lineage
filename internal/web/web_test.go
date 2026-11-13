@@ -282,6 +282,10 @@ func TestSummarizeNeverCountsFailedPayouts(t *testing.T) {
 	if _, class := summarize([]payoutView{failed, ok}, nil); class != "moved" {
 		t.Fatalf("one success among failures still moved money, got %s", class)
 	}
+	sig := payoutView{Payee: "acme.testnet", Rail: "near-adapter", Status: "SIGNED", Cents: 125000}
+	if text, class := summarize([]payoutView{sig}, nil); class != "moved" || strings.Contains(text, "Money moved") || !strings.Contains(text, "Intent signed: $1250.00 to acme.testnet") {
+		t.Fatalf("a signed intent must not be reported as money moved: %q %s", text, class)
+	}
 	if _, class := summarize(nil, nil); class != "safe" {
 		t.Fatalf("no payouts is safe, got %s", class)
 	}

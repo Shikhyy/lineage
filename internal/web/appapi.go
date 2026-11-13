@@ -68,8 +68,9 @@ type apiApproval struct {
 }
 
 type apiPayment struct {
-	Status string `json:"status"`
-	Rail   string `json:"rail"`
+	Status       string `json:"status"`
+	Rail         string `json:"rail"`
+	ResponseJSON string `json:"response_json,omitempty"` // only for signed NEAR intents: the public signature, nothing else
 }
 
 type apiDecision struct {
@@ -106,6 +107,9 @@ func toAPIDecision(d decisionView) apiDecision {
 	}
 	if d.Payment != nil {
 		out.Payment = &apiPayment{Status: d.Payment.Status, Rail: d.Payment.Rail}
+		if d.Payment.Status == "SIGNED" {
+			out.Payment.ResponseJSON = d.Payment.ResponseJSON
+		}
 	}
 	return out
 }
