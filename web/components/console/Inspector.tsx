@@ -6,13 +6,71 @@ import { decisionsOf, fragmentsOf, stepGlyph, stepTitle, threadsFor } from "@/li
 import type { Decision, Fragment, RunDetail } from "@/lib/types";
 import type { Selection } from "./Graph";
 import { railLabel } from "./Graph";
+import { signedFrom, verifySigned, type SignedIntent, type Verification } from "@/lib/nep413";
 
 function TierChip({ trust }: { trust: number }) {
   const t = tier(trust);
   return <span className={`tierchip tier-${t.toLowerCase()}`} title={tierLabel(t)}>{t}</span>;
 }
 
+type IntentArgs = { destination: string; asset: string; amount_cents: number; deadline_unix: number };
+
+function asIntent(a: unknown): IntentArgs | null {
+  const x = a as Partial<IntentArgs> | null;
+  return x && typeof x.destination === "string" ? (x as IntentArgs) : null;
+}
+
+function ttl(deadlineUnix: number): string {
+  const secs = Math.round(deadlineUnix - Date.now() / 1000);
+  if (secs > 86400 * 2) return `${Math.round(secs / 86400)} days from now (a long-lived bearer instrument)`;
+  if (secs > 3600) return `${Math.round(secs / 3600)} hours from the run`;
+  return `${Math.max(1, Math.round(secs / 60))} minutes from the run`;
+}
+
+/** The signature the NEAR adapter produced, checked in this browser rather than taken on trust. */
+function SignedCard({ s }: { s: SignedIntent }) {
+  const [v, setV] = useState<Verification | null>(null);
+  useEffect(() => {
+    let live = true;
+    verifySigned(s).then((r) => live && setV(r));
+    return () => {
+      live = false;
+    };
+  }, [s]);
+  let msg: { signer_id?: string; deadline?: string } = {};
+  try {
+    msg = JSON.parse(s.payload.message);
+  } catch {}
+  return (
+    <div className="in-signed">
+      <h4 className="in-h">Signed NEP-413 intent</h4>
+      <dl className="in-kv">
+        <dt>signer</dt>
+        <dd className="in-mono">{msg.signer_id ?? "?"}</dd>
+        <dt>public key</dt>
+        <dd className="in-mono">{s.public_key}</dd>
+        <dt>recipient</dt>
+        <dd className="in-mono">{s.payload.recipient}</dd>
+        <dt>expires</dt>
+        <dd className="in-mono">{msg.deadline ?? "?"}</dd>
+        <dt>nonce</dt>
+        <dd className="in-mono">{s.payload.nonce}</dd>
+        <dt>signature</dt>
+        <dd className="in-mono">{s.signature}</dd>
+      </dl>
+      <p className={`in-verify ${v && "ok" in v ? (v.ok ? "ok" : "bad") : ""}`} aria-live="polite">
+        {v === null && "Verifying in your browser…"}
+        {v && "ok" in v && v.ok && "Verified in your browser: this key signed exactly this message."}
+        {v && "ok" in v && !v.ok && `Verification failed: ${v.reason}`}
+        {v && "unsupported" in v && "This browser cannot verify ed25519 signatures; the bytes above can be checked with any NEP-413 library."}
+      </p>
+    </div>
+  );
+}
+
 function DecisionDetail({ d }: { d: Decision }) {
+  const intent = asIntent(d.args);
+  const signed = signedFrom(d.payment?.response_json);
   return (
     <div className="in-sec">
       <div className="in-row">
@@ -22,12 +80,27 @@ function DecisionDetail({ d }: { d: Decision }) {
       <dl className="in-kv">
         <dt>invoice</dt>
         <dd>{d.args.invoice_id}</dd>
-        <dt>payee</dt>
-        <dd className="in-mono">{d.args.payee}</dd>
-        <dt>amount</dt>
-        <dd>
-          {money(d.args.amount_cents)} {d.args.currency}
-        </dd>
+        {intent ? (
+          <>
+            <dt>destination</dt>
+            <dd className="in-mono">{intent.destination}</dd>
+            <dt>asset</dt>
+            <dd className="in-mono">{intent.asset}</dd>
+            <dt>amount</dt>
+            <dd>{money(intent.amount_cents)} USD</dd>
+            <dt>valid for</dt>
+            <dd>{ttl(intent.deadline_unix)}</dd>
+          </>
+        ) : (
+          <>
+            <dt>payee</dt>
+            <dd className="in-mono">{d.args.payee}</dd>
+            <dt>amount</dt>
+            <dd>
+              {money(d.args.amount_cents)} {d.args.currency}
+            </dd>
+          </>
+        )}
       </dl>
       {!!d.reasons?.length && (
         <>
@@ -80,9 +153,10 @@ function DecisionDetail({ d }: { d: Decision }) {
       )}
       {d.payment && (
         <p className="in-dim">
-          Payout <b>{d.payment.status}</b> via {railLabel(d.payment.rail)}
+          {intent ? "Intent" : "Payout"} <b>{d.payment.status}</b> via {railLabel(d.payment.rail)}
         </p>
       )}
+      {signed && <SignedCard s={signed} />}
     </div>
   );
 }

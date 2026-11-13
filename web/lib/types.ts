@@ -179,7 +179,7 @@ export interface Decision {
   lineage: LineageEntry[] | null;
   args: PayArgs;
   approval: { id: string; status: "pending" | "approved" | "rejected" } | null;
-  payment: { status: string; rail: string } | null;
+  payment: { status: string; rail: string; response_json?: string } | null;
   created: string;
 }
 

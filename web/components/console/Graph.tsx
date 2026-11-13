@@ -435,5 +435,7 @@ export function railLabel(rail: string): string {
   if (r === "simulated") return "Simulated rail · no real money";
   if (r === "paypal") return "PayPal sandbox";
   if (r === "near") return "NEAR testnet intent";
+  if (r === "near-adapter") return "NEAR · signed by the Rust signer";
+  if (r === "near-simulated") return "NEAR · simulated signature";
   return rail;
 }

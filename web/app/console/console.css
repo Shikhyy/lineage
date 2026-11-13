@@ -626,3 +626,8 @@ body:has(.cx) { background: #130B07; }
   .tb-sel select { width: 100%; min-width: 0; text-overflow: ellipsis; }
   .tb-controls > .btn { flex: none; white-space: nowrap; }
 }
+
+.in-signed { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--cx-line, rgba(242,229,200,.18)); }
+.in-verify { font-size: 12px; margin: 6px 0 0; color: var(--cx-faint); }
+.in-verify.ok { color: #7bd88f; }
+.in-verify.bad { color: #ff7b6b; }
