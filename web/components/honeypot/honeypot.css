@@ -1,0 +1,61 @@
+.hp { padding: clamp(110px, 14vh, 160px) 0 96px; }
+.hp-in { width: min(1120px, 100% - 32px); margin-inline: auto; }
+.hp-h { font-size: clamp(40px, 7vw, 92px); line-height: 0.98; margin: 14px 0 20px; }
+.hp-lede { max-width: 62ch; font-size: 18px; line-height: 1.55; color: var(--ink); margin: 0 0 18px; }
+.hp-facts { max-width: 70ch; margin: 0 0 32px; padding-left: 18px; color: var(--ink-mute); font-size: 14.5px; line-height: 1.55; }
+.hp-facts li { margin-bottom: 4px; }
+.hp-facts b { color: var(--ink); }
+
+.hp-stats { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--ink); background: var(--paper-2); margin-bottom: 36px; }
+.hp-stats > div { padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--ink); }
+.hp-stats > div:last-child { border-right: 0; }
+.hp-n { font: 500 clamp(28px, 4vw, 44px) / 1 var(--mono); color: var(--ink); }
+.hp-stats.is-broken .hp-break { background: #b3261e; }
+.hp-stats.is-broken .hp-break .hp-n, .hp-stats.is-broken .hp-break .mono-label { color: #fff; }
+
+.hp-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; margin-bottom: 48px; }
+.hp-form { display: flex; flex-direction: column; gap: 10px; }
+.hp-form fieldset { border: 0; padding: 0; margin: 0 0 4px; }
+.hp-form textarea { width: 100%; resize: vertical; font: 400 15px/1.5 var(--mono); padding: 12px 14px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 0; }
+.hp-form textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.hp-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.hp-ex { display: flex; flex-wrap: wrap; gap: 8px; }
+.hp-hint { font-size: 13px; color: var(--ink-mute); margin: 4px 0 0; line-height: 1.5; }
+.hp-hint code, .hp-meta code, .hp-why code { font: 500 12px var(--mono); }
+.hp-err { color: #b3261e; font-size: 14px; margin: 0; }
+.hp-empty { color: var(--ink-mute); font-size: 14px; }
+
+.hp-result { display: flex; flex-direction: column; gap: 10px; }
+.hp-feedhead { display: flex; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 8px; margin-bottom: 14px; }
+.hp-feed { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+
+.hp-card { border: 1px solid var(--ink); background: var(--paper); padding: 12px 14px; }
+.hp-card header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.hp-chip { font: 600 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; background: var(--ink); color: var(--paper); }
+.hp-card.o-blocked .hp-chip { background: #1f6f3d; }
+.hp-card.o-held .hp-chip { background: #8a5a00; }
+.hp-card.o-broken { border-color: #b3261e; border-width: 2px; }
+.hp-card.o-broken .hp-chip { background: #b3261e; }
+.hp-msg { margin: 0 0 6px; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.hp-meta { margin: 4px 0 0; font-size: 13px; color: var(--ink-mute); overflow-wrap: anywhere; }
+.hp-lost { color: #b3261e; }
+.hp-why { margin: 6px 0 0; padding-left: 16px; font-size: 13px; color: var(--ink-mute); }
+.hp-card.is-big .hp-msg { font-size: 16px; }
+
+@media (max-width: 860px) {
+  .hp-grid { grid-template-columns: 1fr; }
+  .hp-stats { grid-template-columns: repeat(2, 1fr); }
+  .hp-stats > div { border-bottom: 1px solid var(--ink); }
+}
+
+/* controls: the landing .seg is styled for the dark lab, so restate it for this light page */
+.hp .seg { border-color: var(--ink); }
+.hp .seg button { color: var(--ink); border-right-color: var(--ink); }
+.hp .seg button:hover { background: var(--paper-2); }
+.hp .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.btn-solid { font: 600 12px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 20px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); cursor: pointer; }
+.btn-solid:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+.btn-solid:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-solid:focus-visible, .chip:focus-visible, .hp .seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.chip { font: 500 12px var(--mono); padding: 6px 10px; background: transparent; color: var(--ink); border: 1px solid var(--ink); cursor: pointer; }
+.chip:hover { background: var(--paper-2); }

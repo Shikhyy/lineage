@@ -37,6 +37,7 @@ type Server struct {
 	ResultsPath string // results/latest.md
 
 	lim   limiter
+	hp    honeypot
 	runMu sync.Mutex // serializes demo runs: they reseed the shared fixtures
 }
 

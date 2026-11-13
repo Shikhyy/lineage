@@ -15,6 +15,7 @@ export function Footer({ benchLine }: { benchLine: string | null }) {
           <div>
             <p className="mono-label foot-h">Product</p>
             <Link className="link-u" href="/console">Console</Link>
+            <Link className="link-u" href="/honeypot">Honeypot</Link>
             <Link className="link-u" href="/console?panel=benchmark">Benchmark</Link>
             <Link className="link-u" href="/console?panel=audit">Audit log</Link>
             <Link className="link-u" href="/console?panel=approvals">Approvals</Link>

@@ -10,6 +10,7 @@ const LINKS = [
   { href: "#follow", label: "How it works" },
   { href: "#lab", label: "Attack lab" },
   { href: "#evidence", label: "Evidence" },
+  { href: "/honeypot", label: "Honeypot" },
   { href: "/console", label: "Console" },
 ];
 

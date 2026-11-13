@@ -21,6 +21,8 @@ import (
 
 func (s *Server) apiRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/attack", s.apiAttack)
+	mux.HandleFunc("POST /api/honeypot/attempt", s.apiHoneypotAttempt)
+	mux.HandleFunc("GET /api/honeypot/feed", s.apiHoneypotFeed)
 	mux.HandleFunc("POST /v1/fragments", s.apiFragment)
 	mux.HandleFunc("POST /v1/decide", s.apiDecide)
 	mux.HandleFunc("POST /v1/execute", s.apiExecute)
