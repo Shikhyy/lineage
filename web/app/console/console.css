@@ -7,11 +7,11 @@ body:has(.cx) { background: #130B07; }
   --cx-bg2: #1A100B;
   --cx-bg3: #231610;
   --cx-bg4: #2D1D14;
-  --cx-line: rgba(242, 229, 200, 0.11);
-  --cx-line2: rgba(242, 229, 200, 0.22);
+  --cx-line: rgba(242, 229, 200, 0.14);
+  --cx-line2: rgba(242, 229, 200, 0.28);
   --cx-paper: #F2E5C8;
-  --cx-dim: rgba(242, 229, 200, 0.64);
-  --cx-faint: rgba(242, 229, 200, 0.4);
+  --cx-dim: rgba(242, 229, 200, 0.76);
+  --cx-faint: rgba(242, 229, 200, 0.58);
   --cx-t0: var(--t0, #E8431A);
   --cx-t1: var(--t1, #D9A21B);
   --cx-t2: var(--t2, #3B6EA5);
@@ -21,15 +21,15 @@ body:has(.cx) { background: #130B07; }
   --cx-good: #5BC17E;
   --cx-blue: #6E9FD6;
   --cx-serif: var(--font-display, "Instrument Serif", "Iowan Old Style", Georgia, serif);
-  --cx-sans: var(--font-sans, "Geist", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif);
-  --cx-mono: var(--font-mono, "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --cx-sans: var(--cx-sans-face, "Schibsted Grotesk", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif);
+  --cx-mono: var(--cx-mono-face, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   display: flex;
   flex-direction: column;
   height: 100dvh;
   background: var(--cx-bg);
   color: var(--cx-paper);
-  font: 13.5px/1.5 var(--cx-sans);
+  font: 14px/1.5 var(--cx-sans);
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0;
 }
@@ -631,3 +631,137 @@ body:has(.cx) { background: #130B07; }
 .in-verify { font-size: 12px; margin: 6px 0 0; color: var(--cx-faint); }
 .in-verify.ok { color: #7bd88f; }
 .in-verify.bad { color: #ff7b6b; }
+
+
+/* =====================================================================================
+   Design pass: a ledger with stamps, not a glowing dashboard.
+   Hairline rules and square corners; colour only where it carries meaning (provenance
+   tier, verdict); no glows; one stamp per verdict; serif reserved for titles.
+   ===================================================================================== */
+
+/* labels: one quiet mono voice */
+.cx .micro, .cx .field > span, .tb-console, .tb-sel > span, .lib-grouphead, .gx-colhead, .gx-group,
+.in-h, .in-kv dt, .gx-guard-label, .eg-node b, .rp-pos, .in-n, .gx-frag-kind, .gx-status, .report th {
+  font-family: var(--cx-mono); font-size: 11px; letter-spacing: 0.08em; font-weight: 500;
+}
+.gx-frag-snip, .in-snip, .in-mono, .in-pre, .hist-id { font-family: var(--cx-mono); font-size: 11.5px; }
+
+/* corners: square, like printed forms */
+.cx .btn, .cx .iconbtn, .cx input, .cx select, .cx textarea, .tb-pbtn, .lib-item, .hist-item, .in-lin, .in-pre,
+.in-link, .cx .msg, .flash, .working, .block, .apr-card, .brow, .gx-frag, .eg-node, .cx .seg, .skel,
+.cmp .rp, .in-steps button, .verify, .cx .chip { border-radius: 2px; }
+.gx-guard, .gx-out, .cmp-sum, .cmp-pane, .eg-guard, .eg-out, .report .tablewrap { border-radius: 3px; }
+.cx .tierchip, .cx .classbadge, .cx .vchip, .cx .mini, .cx .flag, .cx .dtag, .cx .railbadge, .kindchip,
+.gx-origin, .gx-reason, .rp-glyph, .bar-line, .bar { border-radius: 1px; }
+.eg-node i { border-radius: 0; }
+.railbadge::before { border-radius: 0; width: 6px; height: 6px; }
+
+/* buttons: labelled controls, not pills */
+.cx .btn { font: 600 11.5px/1 var(--cx-mono); letter-spacing: 0.07em; text-transform: uppercase; height: 36px; }
+.cx .btn kbd { font-weight: 500; }
+.cx .chip { font-size: 12px; }
+
+/* top bar */
+.tb { background: var(--cx-bg); border-bottom: 1px solid var(--cx-line2); padding: 0 16px; min-height: 56px; }
+.tb-name { font-size: 26px; }
+.tb-pbtn { border: 0; border-radius: 0; height: 56px; padding: 0 12px; font-size: 13px; letter-spacing: 0; box-shadow: inset 0 -2px 0 transparent; }
+.tb-pbtn:hover { background: none; color: var(--cx-paper); }
+.tb-pbtn.is-on { background: none; box-shadow: inset 0 -2px 0 var(--cx-paper); }
+.tb-pbtn .badge { border-radius: 1px; animation: none; }
+@media (min-width: 901px) {
+  .tb-controls { flex: 0 1 auto; gap: 0; border: 1px solid var(--cx-line2); border-radius: 3px; margin-left: 4px; overflow: hidden; }
+  .tb-controls > * { border-right: 1px solid var(--cx-line2); }
+  .tb-controls > *:last-child { border-right: 0; }
+  .tb-sel { padding-left: 12px; }
+  .tb-sel select { border: 0; background-color: transparent; border-radius: 0; height: 36px; min-height: 36px; font-size: 13px; }
+  .tb-controls > .btn { border: 0; border-radius: 0; background: transparent; }
+  .tb-controls > .btn:hover:not(:disabled) { background: var(--cx-bg3); }
+  .tb-controls > .btn.primary { background: var(--cx-paper); color: #130B07; }
+  .tb-controls > .btn.primary:hover:not(:disabled) { background: #fff4d9; }
+}
+
+/* rail: a ledger of scenarios */
+.lib-group ul, .hist { gap: 0; }
+.lib-item, .hist-item { border: 0; border-bottom: 1px solid var(--cx-line); border-radius: 0; padding: 11px 10px 11px 12px; }
+.lib-item:hover, .hist-item:hover { background: var(--cx-bg2); }
+.lib-item.is-active, .hist-item.is-active { background: var(--cx-bg3); box-shadow: inset 3px 0 0 var(--cx-paper); border-bottom-color: var(--cx-line); }
+.lib-title { font-size: 13px; line-height: 1.4; }
+.cx .classbadge { border: 0; background: none; padding: 0; min-width: 26px; height: auto; place-items: start; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; padding-top: 2px; }
+.cx .classbadge.attack { color: var(--cx-hot); background: none; }
+.cx .classbadge.benign { color: var(--cx-good); background: none; }
+.lib-grouphead { margin: 14px 4px 6px; padding-bottom: 6px; border-bottom: 1px solid var(--cx-line2); }
+.lib-tabs button { font-size: 13px; }
+
+/* run view */
+.rv-title h1 { font-size: clamp(24px, 2.3vw, 32px); }
+.rv-graph { background: linear-gradient(rgba(242, 229, 200, 0.035) 1px, transparent 1px) 0 0 / 100% 28px; }
+.rv-outcome { font: 600 17px/1.35 var(--cx-sans); color: var(--cx-paper); letter-spacing: -0.005em; margin: 6px 0 8px; }
+.rv-outcome.kind-moved-bad { color: #FF9C7D; }
+.rv-outcome.kind-held { color: var(--cx-amber); }
+.rv-outcome.kind-blocked, .rv-outcome.kind-moved-ok { color: var(--cx-good); }
+
+/* graph: crisp, no glow */
+.gx-frag { padding: 9px 12px 9px 13px; }
+.gx-frag.is-origin { box-shadow: 0 0 0 1px var(--tc); background: color-mix(in srgb, var(--tc) 9%, var(--cx-bg2)); }
+.gx-frag.is-origin.is-selected, .gx-frag.is-selected { box-shadow: 0 0 0 1px var(--cx-paper); }
+.gx-frag-src { font-size: 13px; }
+.gx-guard, .gx-out { border-left-width: 4px; padding: 16px 16px 18px; }
+.gx-guard { background: var(--cx-bg2); }
+.gx-guard.v-allow, .gx-guard.v-ask_owner, .gx-guard.v-block { box-shadow: none; }
+.gx-guard.v-allow { border-color: var(--cx-good); }
+.gx-guard.v-ask_owner { border-color: var(--cx-amber); }
+.gx-guard.v-block { border-color: var(--cx-hot); }
+@keyframes cx-scan { 50% { background: var(--cx-bg3); } }
+
+/* the verdict is a stamp */
+.gx-verdict {
+  display: inline-block; font: 700 clamp(18px, 1.7vw, 23px)/1 var(--cx-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 9px 12px 8px; margin: 2px 0 16px; border: 2px solid currentColor; border-radius: 2px; transform: rotate(-2.5deg);
+  animation: cx-stamp 0.45s cubic-bezier(0.2, 1.25, 0.3, 1) both;
+}
+.gx-verdict.none { font: 500 13px/1 var(--cx-mono); letter-spacing: 0.06em; border-style: dashed; transform: none; animation: none; }
+.is-compact .gx-verdict { font-size: 15px; padding: 7px 9px 6px; }
+@keyframes cx-stamp { 0% { transform: rotate(-2.5deg) scale(1.6); opacity: 0; } 55% { opacity: 1; } 100% { transform: rotate(-2.5deg) scale(1); } }
+.gx-out-head { font-size: clamp(24px, 2.2vw, 31px); }
+.is-compact .gx-out-head { font-size: clamp(20px, 1.8vw, 25px); }
+.gx-reason { padding: 4px 6px; font-size: 11px; }
+
+/* outcome cards: flat tints */
+.gx-out.kind-moved-bad { background: color-mix(in srgb, var(--cx-hot) 11%, var(--cx-bg2)); box-shadow: none; }
+.gx-out.kind-moved-ok, .gx-out.kind-blocked { background: color-mix(in srgb, var(--cx-good) 9%, var(--cx-bg2)); }
+.gx-out.kind-held { background: color-mix(in srgb, var(--cx-amber) 9%, var(--cx-bg2)); }
+.gx-out.kind-wait { background: transparent; }
+
+/* threads: strokes only */
+.th-main.tone-t0, .th-main.tone-good, .th-main.tone-t1, .th-out.kind-moved-bad { filter: none; }
+.th-main { stroke-width: 2.2; }
+
+/* compare and benchmark: flat fills */
+.cmp-sum-col.bad { background: color-mix(in srgb, var(--cx-hot) 10%, transparent); }
+.cmp-sum-col.good { background: color-mix(in srgb, var(--cx-good) 9%, transparent); }
+.cmp-sum-mid { font-family: var(--cx-mono); font-style: normal; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+.bar.bad { background: var(--cx-hot); }
+.bar.good { background: #3E9560; }
+.bar-val { text-shadow: none; font-weight: 600; }
+.brow.is-lineage { background: color-mix(in srgb, var(--cx-good) 7%, transparent); }
+
+/* panels */
+.drawer { box-shadow: none; font-family: var(--cx-sans-face, var(--font-sans, ui-sans-serif, system-ui, sans-serif)); font-size: 14px; }
+.drawer-head h2 { font: 600 20px/1.2 var(--cx-sans-face, ui-sans-serif, system-ui, sans-serif); letter-spacing: -0.01em; }
+.report h1, .report h2, .report h3 { font-family: var(--cx-sans-face, ui-sans-serif, system-ui, sans-serif); font-weight: 600; letter-spacing: -0.01em; }
+.block::before { box-shadow: 0 0 0 3px #170E09; }
+.block.is-mine { background: color-mix(in srgb, var(--cx-good) 8%, var(--cx-bg2)); }
+.apr-card { border-left: 4px solid var(--cx-amber); }
+
+/* stage-set empty state */
+.eg-copy h2 { font-size: clamp(30px, 3.1vw, 46px); }
+
+/* figures line up; running text keeps its natural punctuation */
+.gx-out-amt, .rp-pos, .in-n, .in-idx, .block-seq, .bar-val, .brow-lost b, .hp-n, .cmp-big, .in-kv dd, .badge, .gx-count { font-variant-numeric: tabular-nums; }
+
+/* compact panes (compare): the decision column needs room for a stamp and a reason code */
+.is-compact .gx { grid-template-columns: minmax(0, 1.05fr) minmax(176px, 0.95fr) minmax(0, 1fr); column-gap: clamp(28px, 4cqw, 60px); }
+.gx-verdict { white-space: nowrap; }
+.is-compact .gx-verdict { font-size: 13px; letter-spacing: 0.06em; padding: 6px 8px 5px; }
+.is-compact .gx-reason { font-size: 10px; letter-spacing: 0; }
+.is-compact .gx-guard, .is-compact .gx-out { padding: 12px; }
