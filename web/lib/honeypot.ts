@@ -70,8 +70,18 @@ export const OUTCOME_LABEL: Record<HoneypotOutcome, string> = {
 
 export const REASON_PLAIN: Record<string, string> = {
   UNTRUSTED_PAYEE_CHANGE: "destination only appears in untrusted text",
-  INTENT_TTL_TOO_LONG: "deadline is longer than allowed",
+  UNGROUNDED_PAYEE: "destination is not backed by any trusted record",
+  PAYEE_BELONGS_TO_OTHER_VENDOR: "destination belongs to a different vendor",
+  OWNER_INSTRUCTED_DIFFERS_FROM_MASTER: "owner instruction differs from the vendor record",
+  NO_NEAR_ACCOUNT: "the vendor has no NEAR account on record",
+  DEADLINE_TOO_LONG: "deadline is longer than allowed, so the signature would live too long",
+  DEADLINE_EXPIRED: "deadline has already passed",
   ASSET_NOT_ALLOWED: "asset is not on the allowlist",
   AMOUNT_EXCEEDS_PO: "amount is above the approved purchase order",
+  AMOUNT_MISMATCH_INVOICE: "amount does not match the invoice",
+  AMOUNT_OVER_CAP: "amount is over the cap",
+  DAILY_CAP: "the daily cap is used up",
   NONCE_REUSED: "nonce was already used",
+  DUPLICATE_INVOICE: "this invoice was already settled",
+  MALFORMED_CALL: "the request was malformed",
 };
