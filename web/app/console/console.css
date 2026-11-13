@@ -21,8 +21,8 @@ body:has(.cx) { background: #130B07; }
   --cx-good: #5BC17E;
   --cx-blue: #6E9FD6;
   --cx-serif: var(--font-display, "Instrument Serif", "Iowan Old Style", Georgia, serif);
-  --cx-sans: var(--cx-sans-face, "Schibsted Grotesk", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif);
-  --cx-mono: var(--cx-mono-face, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --cx-sans: var(--font-sans, "Schibsted Grotesk", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif);
+  --cx-mono: var(--font-mono, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   display: flex;
   flex-direction: column;
@@ -746,9 +746,9 @@ body:has(.cx) { background: #130B07; }
 .brow.is-lineage { background: color-mix(in srgb, var(--cx-good) 7%, transparent); }
 
 /* panels */
-.drawer { box-shadow: none; font-family: var(--cx-sans-face, var(--font-sans, ui-sans-serif, system-ui, sans-serif)); font-size: 14px; }
-.drawer-head h2 { font: 600 20px/1.2 var(--cx-sans-face, ui-sans-serif, system-ui, sans-serif); letter-spacing: -0.01em; }
-.report h1, .report h2, .report h3 { font-family: var(--cx-sans-face, ui-sans-serif, system-ui, sans-serif); font-weight: 600; letter-spacing: -0.01em; }
+.drawer { box-shadow: none; font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif); font-size: 14px; }
+.drawer-head h2 { font: 600 20px/1.2 var(--font-sans, ui-sans-serif, system-ui, sans-serif); letter-spacing: -0.01em; }
+.report h1, .report h2, .report h3 { font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif); font-weight: 600; letter-spacing: -0.01em; }
 .block::before { box-shadow: 0 0 0 3px #170E09; }
 .block.is-mine { background: color-mix(in srgb, var(--cx-good) 8%, var(--cx-bg2)); }
 .apr-card { border-left: 4px solid var(--cx-amber); }

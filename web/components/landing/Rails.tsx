@@ -35,16 +35,18 @@ export function Rails() {
         </Reveal>
         <Reveal as="article" className="rail rail-wip" delay={0.1}>
           <p className="mono-label rail-status">
-            <i aria-hidden="true" /> Signer built · execution in testing
+            <i aria-hidden="true" /> Signer wired in · settlement not run
           </p>
           <h3 className="display">NEAR Intents</h3>
           <p>
-            A Rust signer for NEAR Intents is built and sits behind the same guard. Real on-chain execution is not done yet:
-            it is in testing. The benchmark covers four intent attack classes against the guard, not live settlement.
+            A Rust signer for NEAR Intents sits behind the same guard. When it is running, allowed or owner-approved
+            intents get a real NEP-413 signature that the console checks in your browser; held and blocked ones are never
+            signed. Without it, signatures are simulated and labelled so. Settlement on NEAR mainnet has not been run, and
+            the benchmark covers four intent attack classes, not live settlement.
           </p>
           <dl className="rail-facts mono">
-            <div><dt>Signer</dt><dd>Built (Rust)</dd></div>
-            <div><dt>Execution</dt><dd>In testing</dd></div>
+            <div><dt>Signing</dt><dd>Real when the signer runs</dd></div>
+            <div><dt>Settlement</dt><dd>Not run</dd></div>
             <div><dt>Real money</dt><dd>No</dd></div>
           </dl>
         </Reveal>

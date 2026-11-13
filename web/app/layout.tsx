@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { IBM_Plex_Mono, Instrument_Serif, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -9,8 +9,10 @@ const display = Instrument_Serif({
   variable: "--font-display",
   display: "swap",
 });
-const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+// One type system for the whole product: a grotesk for text, a typewriter-ish mono for data and labels,
+// and the serif for display only.
+const sans = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-mono", display: "swap" });
 
 const TITLE = "Lineage — pay only what you can trace home";
 const DESC =
